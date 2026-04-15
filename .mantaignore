@@ -1,0 +1,12 @@
+# .mantaignore — Suppress specific Manta findings
+#
+# Format: [file-glob]  [keyword-or-severity]  # optional reason
+#
+# Examples:
+#   src/utils/hash.ts  MD5                    # non-security use of MD5
+#   src/generated/**   DRY                    # generated code — DRY not applicable
+#   **                 INFO                   # suppress all INFO findings globally
+#
+# Severities: CRITICAL, WARNING, INFO
+# Suppressions are applied by all review orchestrators before reporting.
+# Use for intentional trade-offs, accepted risk, or false positives — not to hide real issues.

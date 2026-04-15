@@ -1,0 +1,91 @@
+{
+  "_comment": "Manta pattern configuration. Values here override PATTERNS.md. Set any field to null to leave it unset (agents will infer). Run /project:capture-patterns to auto-populate from your codebase.",
+
+  "naming": {
+    "source_files": null,
+    "test_files": null,
+    "migration_files": null,
+    "functions": null,
+    "classes": null,
+    "interfaces_prefix": null,
+    "constants": null,
+    "db_tables": null,
+    "db_columns": null,
+    "db_primary_key": null,
+    "db_foreign_key": null
+  },
+
+  "folder_structure": {
+    "layout": null,
+    "layer_rules": null
+  },
+
+  "imports": {
+    "style": null,
+    "order": null,
+    "barrel_exports": null
+  },
+
+  "error_handling": {
+    "throw_style": null,
+    "catch_boundary": null,
+    "error_shape": null,
+    "log_on_error": null
+  },
+
+  "logging": {
+    "library": null,
+    "format": null,
+    "levels": null,
+    "required_fields": null,
+    "forbidden_fields": null,
+    "request_id_propagation": null
+  },
+
+  "api": {
+    "success_shape": null,
+    "error_shape": null,
+    "paginated_shape": null,
+    "status_codes": null,
+    "versioning": null
+  },
+
+  "tests": {
+    "framework": null,
+    "file_location": null,
+    "naming_convention": null,
+    "mock_strategy": null,
+    "fixture_strategy": null,
+    "coverage_threshold": null
+  },
+
+  "git": {
+    "commit_style": null,
+    "branch_naming": null,
+    "pr_size_limit": null,
+    "merge_strategy": null
+  },
+
+  "performance": {
+    "pagination_limit": null,
+    "async_threshold_ms": null,
+    "db_query_rules": null
+  },
+
+  "ui": {
+    "component_style": null,
+    "component_library": null,
+    "styling": null,
+    "icon_library": null,
+    "state_management": null,
+    "props_typing": null,
+    "component_size_limit": null,
+    "storybook": null,
+    "dark_mode": null,
+    "animation_library": null,
+    "responsive_strategy": null,
+    "barrel_exports": null
+  },
+
+  "forbidden_patterns": []
+}

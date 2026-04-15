@@ -1,0 +1,90 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git status*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git stash*)",
+      "Bash(git blame*)",
+      "Bash(npm audit*)",
+      "Bash(npm test*)",
+      "Bash(npm run*)",
+      "Bash(pnpm audit*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm run*)",
+      "Bash(yarn audit*)",
+      "Bash(yarn test*)",
+      "Bash(pip-audit*)",
+      "Bash(safety check*)",
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(go test*)",
+      "Bash(govulncheck*)",
+      "Bash(cargo audit*)",
+      "Bash(cargo test*)",
+      "Bash(bundle audit*)",
+      "Bash(bundle exec rspec*)",
+      "Bash(bundle exec rake test*)",
+      "Bash(make test*)",
+      "Bash(grep*)",
+      "Bash(find . *)",
+      "Bash(cat package.json*)",
+      "Bash(cat requirements*.txt*)",
+      "Bash(cat go.mod*)",
+      "Bash(cat Cargo.toml*)",
+      "Bash(cat pyproject.toml*)",
+      "Bash(ls *)",
+      "Bash(wc -l*)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(mkdir -p *)",
+      "Bash(touch *)",
+      "Bash(chmod +x *)",
+      "Bash(bash scripts/setup.sh*)",
+      "Bash(git init*)",
+      "Bash(git add *)",
+      "Bash(git commit*)",
+      "Bash(mkdir -p reports*)"
+    ],
+    "deny": [
+      "Bash(git push*)",
+      "Bash(git reset --hard*)",
+      "Bash(git checkout -- *)",
+      "Bash(rm -rf*)",
+      "Bash(curl * | bash*)",
+      "Bash(wget * | bash*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE 'git commit.*(--no-verify|-n\\b)'; then echo '[BLOCKED] git commit --no-verify bypasses the pre-commit review pipeline. Use SKIP_MANTA_REVIEW=1 git commit to bypass with logging, or fix the blocking issues and commit normally.' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(npm install|pip install|cargo add|go get)'; then echo '[hook] Dependency change detected — security-sentinel will scan on next commit'; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_REVIEW_BLOCK_ON_CRITICAL": "true",
+    "CLAUDE_REVIEW_AGENTS": "security-sentinel,code-quality,perf-analyzer,db-migration-guardian",
+    "CLAUDE_PUSH_REVIEW_AGENTS": "security-sentinel,code-quality,perf-analyzer,db-migration-guardian",
+    "CLAUDE_DOCS_AUTO_UPDATE": "ask"
+  }
+}
