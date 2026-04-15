@@ -148,6 +148,41 @@ Manta enforces project-specific coding conventions at pre-commit via two config 
 
 ---
 
+## Subdirectory Mode
+
+When Manta Community is installed as a subfolder inside a project (e.g. `my-project/community/`), all agents and commands must target the **parent directory** for project files — not the `community/` folder itself.
+
+**How to detect subdirectory mode:**
+```bash
+# If this returns a path one level up from pwd, you're in subdirectory mode
+git rev-parse --show-toplevel
+```
+
+**Rules when in subdirectory mode:**
+- All file creation (spec, architecture, scaffold, reports, etc.) goes to `../` — the parent project root
+- All file reads (source code, package.json, existing specs) use `../` as the base
+- Git operations (staged files, diffs, log) target the parent automatically via the git environment
+- **Never create project artifacts inside the `community/` folder itself**
+
+**Path translation:**
+| Instead of | Use |
+|---|---|
+| `spec/SPEC.md` | `../spec/SPEC.md` |
+| `src/` | `../src/` |
+| `package.json` | `../package.json` |
+| `reports/` | `../reports/` |
+| `docs/BLUEPRINT.md` | `../docs/BLUEPRINT.md` |
+| `ARCHITECTURE.md` | `../ARCHITECTURE.md` |
+| `.env.example` | `../.env.example` |
+| `README.md` | `../README.md` |
+| `PATTERNS.md` | `../PATTERNS.md` |
+| `manta.patterns.json` | `../manta.patterns.json` |
+| `.mantaignore` | `../.mantaignore` |
+
+This applies to every agent and every command — `/project:init`, `/project:scaffold`, `/project:write`, `/project:audit`, `/project:blueprint`, and all others.
+
+---
+
 ## Principles
 
 1. **Security by default** — treat all external input as untrusted
