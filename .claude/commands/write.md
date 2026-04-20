@@ -1,6 +1,6 @@
 **Begin by outputting:** `[ Cathy — Write ]`
 
-Generate a production-complete feature implementation with enterprise best practices built in.
+Write a complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions, audit trail) baked in. No TODOs, no placeholder logic.
 
 ## What This Is
 

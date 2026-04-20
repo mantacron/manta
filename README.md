@@ -147,7 +147,7 @@ Manta Enterprise is the managed version built for teams in regulated industries.
 - **Penetration testing** — automated pentest runs on every push, not just quarterly
 - **Spec & architecture governance** — architectural drift and API contract deviations caught before the PR
 - **Observability checks** — every endpoint has logging, timeouts, and health checks enforced
-- **20 agents** vs 11 in community, and 24 commands vs 14
+- **21 agents** vs 11 in community, and 25 commands vs 14
 
 **[Learn more →](https://mantacron.github.io/manta-enterprise/)**
 

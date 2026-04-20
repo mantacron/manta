@@ -307,7 +307,7 @@ if git rev-parse --git-dir &>/dev/null; then
     log_ok "git config core.hooksPath = ${MANTA_RELPATH}/.githooks (set at project root)"
     log_info "Subdirectory mode: Manta is at ${MANTA_RELPATH}/, agents target the parent project"
 
-    if ! grep -q "Manta Subdirectory Mode" CLAUDE.md 2>/dev/null; then
+    if ! grep -q "Subdirectory Mode" CLAUDE.md 2>/dev/null; then
       cat >> CLAUDE.md << EOF
 
 ---

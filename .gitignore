@@ -1,0 +1,12 @@
+# Cache
+.cathy-cache/
+
+# Generated reports
+reports/
+
+# Pentest tools (auto-installed on first run)
+pentesting/
+
+# OS
+.DS_Store
+Thumbs.db

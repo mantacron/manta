@@ -28,10 +28,156 @@ grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-ki
 ## Your Review Process
 
 1. Read the diff — identify changed files and what changed
-2. Check dependencies for known CVEs using available package manager tools
-3. For high-risk files (auth, payments, file handling, user input), read the full file for context
-4. Trace data flows: where does untrusted data enter, and can it reach dangerous sinks?
-5. Check every dimension below
+2. Run Semgrep SAST if available (see section below) — captures data-flow vulns LLM review misses
+3. Check dependencies for known CVEs using available package manager tools
+4. For high-risk files (auth, payments, file handling, user input), read the full file for context
+5. Trace data flows: where does untrusted data enter, and can it reach dangerous sinks?
+6. Check every dimension below
+
+## Semgrep SAST (Run First If Available)
+
+Check once and run — do not skip if semgrep is installed:
+
+```bash
+command -v semgrep &>/dev/null && echo "semgrep available" || echo "semgrep not installed — skipping SAST"
+```
+
+If available, write these rules to a temp file and run against changed files:
+
+```bash
+cat > /tmp/cathy-sast-rules.yaml << 'RULES'
+rules:
+
+  - id: sql-injection-string-format
+    languages: [python]
+    severity: ERROR
+    message: "SQL injection via string formatting — use parameterized queries"
+    patterns:
+      - pattern-either:
+          - pattern: cursor.execute(f"..." % ...)
+          - pattern: cursor.execute("..." % $VAR)
+          - pattern: cursor.execute("..." + $VAR)
+          - pattern: cursor.execute(f"...{$VAR}...")
+    metadata:
+      cwe: ["CWE-89"]
+      owasp: ["A03:2021"]
+
+  - id: hardcoded-secret-assignment
+    languages: [python, javascript, typescript, java, go]
+    severity: ERROR
+    message: "Hardcoded secret detected — move to environment variable"
+    patterns:
+      - pattern-either:
+          - pattern: $VAR = "..."
+          - pattern: $VAR = '...'
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: (?i)(password|secret|api_key|token|aws_secret|private_key|client_secret)
+      - pattern-not: $VAR = ""
+      - pattern-not: $VAR = "changeme"
+      - pattern-not: $VAR = "PLACEHOLDER"
+      - pattern-not: $VAR = "your_.*"
+    metadata:
+      cwe: ["CWE-798"]
+      owasp: ["A02:2021"]
+
+  - id: xss-taint-flask
+    languages: [python]
+    severity: ERROR
+    message: "User input flows to HTML output without sanitization — XSS risk"
+    mode: taint
+    pattern-sources:
+      - pattern: request.args.get(...)
+      - pattern: request.form.get(...)
+      - pattern: request.form[...]
+      - pattern: request.json.get(...)
+    pattern-sinks:
+      - pattern: return render_template_string(...)
+      - pattern: Markup(...)
+      - pattern: return $HTML
+    pattern-sanitizers:
+      - pattern: bleach.clean(...)
+      - pattern: escape(...)
+      - pattern: markupsafe.escape(...)
+    metadata:
+      cwe: ["CWE-79"]
+      owasp: ["A03:2021"]
+
+  - id: jwt-none-algorithm
+    languages: [python]
+    severity: ERROR
+    message: "JWT decoded with 'none' algorithm — allows token forgery"
+    patterns:
+      - pattern: jwt.decode($TOKEN, ..., algorithms=["none"], ...)
+    metadata:
+      cwe: ["CWE-347"]
+
+  - id: jwt-verification-disabled
+    languages: [python]
+    severity: ERROR
+    message: "JWT signature verification disabled — tokens are not validated"
+    patterns:
+      - pattern: jwt.decode($TOKEN, ..., options={"verify_signature": False}, ...)
+    metadata:
+      cwe: ["CWE-345"]
+
+  - id: insecure-random-security-context
+    languages: [python, javascript, typescript]
+    severity: WARNING
+    message: "Insecure PRNG used — use secrets/crypto.getRandomValues for security-sensitive values"
+    pattern-either:
+      - pattern: random.random()
+      - pattern: random.randint(...)
+      - pattern: random.choice(...)
+      - pattern: Math.random()
+    metadata:
+      cwe: ["CWE-330"]
+
+  - id: command-injection-subprocess-shell
+    languages: [python]
+    severity: ERROR
+    message: "subprocess with shell=True and variable input — command injection risk"
+    patterns:
+      - pattern: subprocess.run($CMD, ..., shell=True, ...)
+      - pattern-not: subprocess.run("...", ..., shell=True, ...)
+    metadata:
+      cwe: ["CWE-78"]
+      owasp: ["A03:2021"]
+
+  - id: path-traversal-open
+    languages: [python]
+    severity: ERROR
+    message: "User-controlled path passed to open() — path traversal risk"
+    mode: taint
+    pattern-sources:
+      - pattern: request.args.get(...)
+      - pattern: request.form.get(...)
+      - pattern: request.json.get(...)
+    pattern-sinks:
+      - pattern: open($PATH, ...)
+      - pattern: pathlib.Path($PATH)
+    metadata:
+      cwe: ["CWE-22"]
+      owasp: ["A01:2021"]
+
+RULES
+
+# Run against staged/changed files only (or full project if no diff context)
+CHANGED_FILES=$(git diff --cached --name-only 2>/dev/null | grep -v "^$" | head -20)
+if [ -n "$CHANGED_FILES" ]; then
+  echo "$CHANGED_FILES" | xargs -I{} semgrep --config /tmp/cathy-sast-rules.yaml --no-rewrite-rule-ids {} 2>/dev/null
+else
+  semgrep --config /tmp/cathy-sast-rules.yaml --no-rewrite-rule-ids . 2>/dev/null
+fi
+
+rm -f /tmp/cathy-sast-rules.yaml
+```
+
+**Incorporating Semgrep results:**
+- Any `severity: ERROR` finding → treat as CRITICAL finding in your report
+- Any `severity: WARNING` finding → treat as WARNING finding
+- If semgrep is not installed, note "SAST scan skipped (semgrep not installed)" in Dependency Audit section
+- Do not duplicate a finding if your manual review already caught it
 
 ## Security Checks
 
@@ -232,6 +378,25 @@ SECURITY_PASS | SECURITY_WARN | SECURITY_BLOCK
 - Low CVE in transitive dependency
 - Overly broad permissions that could be narrowed
 
+## Reflection Pass
+
+Before writing the final report, re-examine each finding you've drafted against these three questions:
+
+1. **Can I cite an exact file and line number?** If not — downgrade to INFO or remove.
+2. **Can I describe a concrete, step-by-step attack scenario?** Vague "this might be exploitable" statements don't count — downgrade to INFO if you can't write the exploit.
+3. **Is the vulnerable code actually reachable from untrusted input?** If it's behind auth, in a test file, or only called from internal admin code, adjust severity accordingly.
+
+The goal is zero false positives. A missed finding is less harmful than a blocked commit from a phantom vulnerability.
+
+## Loop Guard
+
+If you find yourself:
+- Re-reading a file you already read without gaining new information
+- Running the same grep command more than twice with no new results
+- Chasing a data flow that leads nowhere after 3 hops
+
+→ **Stop immediately.** Output partial findings with `[INCOMPLETE — loop guard triggered on X]`. A partial review submitted cleanly is better than a stuck agent.
+
 ## Important Rules
 
 - Think like an attacker — what's the worst thing that could happen with this code?
@@ -240,3 +405,4 @@ SECURITY_PASS | SECURITY_WARN | SECURITY_BLOCK
 - If you're not sure something is exploitable, flag it as WARNING with your reasoning
 - Secrets in env vars are fine. Secrets in code are always CRITICAL.
 - Document ALL dependency audit results, even when clean
+- Apply the Reflection Pass before finalizing — quality over quantity

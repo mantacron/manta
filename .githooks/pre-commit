@@ -23,8 +23,15 @@ GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"
-HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-120}"  # seconds before giving up
+HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-120}"  # seconds before giving up (whole review)
 SKIP_VAR="SKIP_CLAUDE_REVIEW"
+
+# Per-agent timeouts (informational — enforced inside the review command)
+AGENT_TIMEOUT_SENTINEL="${AGENT_TIMEOUT_SENTINEL:-90}"
+AGENT_TIMEOUT_QUALITY="${AGENT_TIMEOUT_QUALITY:-45}"
+AGENT_TIMEOUT_PERF="${AGENT_TIMEOUT_PERF:-30}"
+AGENT_TIMEOUT_DB="${AGENT_TIMEOUT_DB:-20}"
+export AGENT_TIMEOUT_SENTINEL AGENT_TIMEOUT_QUALITY AGENT_TIMEOUT_PERF AGENT_TIMEOUT_DB
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
@@ -60,6 +67,26 @@ echo -e "${CYAN}${BOLD}│         Claude Code Pre-Commit Review           │${
 echo -e "${CYAN}${BOLD}└─────────────────────────────────────────────────┘${RESET}"
 echo ""
 echo -e "${CYAN}[claude]${RESET} Reviewing $(echo "$STAGED_CODE_FILES" | wc -l | tr -d ' ') staged file(s)..."
+
+# ─── Shallow pre-scan ─────────────────────────────────────────────────────────
+SHALLOW_RESULT=""
+if [[ -f "$MANTA_DIR/scripts/shallow-scan.sh" ]]; then
+  SHALLOW_RESULT=$(cd "$GIT_ROOT" && bash "$MANTA_DIR/scripts/shallow-scan.sh" 2>/dev/null || true)
+  SHALLOW_STATUS=$(echo "$SHALLOW_RESULT" | grep "^SHALLOW_SCAN:" | cut -d' ' -f2 || echo "UNKNOWN")
+  SIGNAL_COUNT=$(echo "$SHALLOW_RESULT" | grep "^SIGNALS:" | cut -d' ' -f2 || echo "0")
+
+  if [[ "$SHALLOW_STATUS" == "SIGNALS_FOUND" ]]; then
+    echo -e "${YELLOW}[claude]${RESET} Shallow scan: ${SIGNAL_COUNT} signal(s) — running full agent review"
+  else
+    echo -e "${GREEN}[claude]${RESET} Shallow scan: clean — running optimized review"
+  fi
+fi
+
+# ─── Project map ─────────────────────────────────────────────────────────────
+if [[ -f "$MANTA_DIR/scripts/build-project-map.sh" ]]; then
+  cd "$GIT_ROOT" && bash "$MANTA_DIR/scripts/build-project-map.sh" > /dev/null 2>&1 || true
+fi
+
 echo -e "${CYAN}[claude]${RESET} Running: security-sentinel, code-quality, perf-analyzer, db-migration-guardian"
 echo ""
 

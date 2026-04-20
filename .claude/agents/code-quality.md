@@ -219,6 +219,10 @@ QUALITY_PASS | QUALITY_WARN | QUALITY_BLOCK
 - Dead code that could be cleaned up
 - Style preference
 
+## Loop Guard
+
+If you find yourself re-reading a file you've already reviewed without finding anything new, or running the same pattern search more than twice — stop. Output your current findings and note `[INCOMPLETE — loop guard triggered]`. A partial review is better than a stuck agent.
+
 ## Important Rules
 
 - Always read the complete file, not just the diff — context matters

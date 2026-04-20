@@ -212,6 +212,10 @@ PERF_PASS | PERF_WARN | PERF_BLOCK
 - Slight algorithmic improvements where current is acceptable
 - Caching opportunities for non-critical paths
 
+## Loop Guard
+
+If you find yourself tracing the same call path more than three hops without a finding, or re-reading the same file — stop. Output partial findings with `[INCOMPLETE — loop guard triggered]` and exit.
+
 ## Important Rules
 
 - Only flag things that will matter at the spec's stated scale — don't optimize prematurely
