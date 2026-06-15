@@ -65,6 +65,7 @@ PR opened → PR summary generated automatically
 | Command | Description |
 |---------|-------------|
 | `/project:init` | **Start here** — new project wizard or existing codebase quick setup |
+| `/project:poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton; no interview, no architecture phases |
 | `/project:audit [focus]` | Full codebase audit → `reports/YYYY-MM-DD-report.md` with score and quick wins |
 | `/project:review` | Full review of staged changes (4 agents) |
 | `/project:pre-commit-review` | Structured output for pre-commit git hook (4 agents: security, quality, perf, migrations) |
@@ -73,7 +74,9 @@ PR opened → PR summary generated automatically
 | `/project:update-docs` | Update README.md and CHANGELOG.md |
 | `/project:security-scan` | Full security audit (OWASP + secrets) |
 | `/project:blueprint` | Generate `docs/BLUEPRINT.md` — stack, API map, ER diagram, module map |
-| `/project:fix` | AI fix suggestions for last blocked commit — stdout only |
+| `/project:fix [--apply]` | AI fix suggestions for last blocked commit; `--apply` walks through each with Y/n and writes to files |
+| `/project:explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
+| `/project:debt` | Harvest `// cathy-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
 | `/project:scaffold "description"` | Generate feature boilerplate matching project conventions |
 | `/project:write "description"` | Write complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions) baked in |
 | `/project:ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |

@@ -1,4 +1,4 @@
-# Manta Community
+# Manta
 
 <p align="center">
   <img src="https://drive.google.com/uc?export=view&id=1Z4H0gpwkAcYIODVD_st3qp0SPI0ehMjt" alt="Mantacron" width="200" />
@@ -6,14 +6,14 @@
 
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
-║                               M A N T A                                        ║
-║                    11-agent AI pipeline · community edition                   ║
+║                               M A N T A                                       ║
+║                  11-agent · 17-command AI pipeline · free                     ║
 ║                                                                               ║
-║         Every commit reviewed.  Every secret caught.  Free forever.          ║
+║         Every commit reviewed.  Every secret caught.  Free forever.           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**11 agents. 14 commands. 2 git hooks. Works on new projects and existing codebases.**
+**11 agents. 17 commands. 2 git hooks. Works on new projects and existing codebases.**
 
 ---
 
@@ -65,9 +65,12 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | Command | What It Does |
 |---------|-------------|
 | `/project:init` | New project wizard (spec + architecture + scaffold) or quick setup for existing code |
+| `/project:poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton. No interview, no phases |
 | `/project:review` | Interactive 4-agent review of staged changes |
 | `/project:security-scan` | Full repository security audit (secrets + OWASP) |
-| `/project:fix` | AI fix suggestions for the last blocked commit |
+| `/project:fix [--apply]` | AI fix suggestions for the last blocked commit; `--apply` walks through each with Y/n and writes to files |
+| `/project:explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
+| `/project:debt` | Harvest `// cathy-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
 | `/project:scaffold "feature"` | Generate boilerplate matching your project's conventions |
 | `/project:write "feature"` | Write complete production-ready implementation — rate limiting, auth, validation, pagination, transactions baked in |
 | `/project:ui [path]` | Convert screenshots/wireframes into responsive, accessible components |
@@ -140,14 +143,27 @@ Need compliance enforcement, health scoring, penetration testing, or spec-driven
 
 ## Manta Enterprise
 
-Manta Enterprise is the managed version built for teams in regulated industries. It adds:
+Manta Enterprise is built for engineering teams in regulated industries. On top of everything in Community, it adds:
 
-- **Compliance enforcement** — GDPR, HIPAA, PCI-DSS, SOC 2 checked on every commit
-- **Health scoring & trend tracking** — codebase health reports over time, ready for leadership reporting
-- **Penetration testing** — automated pentest runs on every push, not just quarterly
-- **Spec & architecture governance** — architectural drift and API contract deviations caught before the PR
-- **Observability checks** — every endpoint has logging, timeouts, and health checks enforced
-- **21 agents** vs 11 in community, and 25 commands vs 14
+| | Community | Enterprise |
+|---|:---:|:---:|
+| Pre-commit review (4 agents) | ✓ | ✓ |
+| Pre-push review | 4 agents | 9 agents |
+| Code generation (scaffold, write, ui) | ✓ | ✓ |
+| Security scan | OWASP + secrets | + CVE audit, license check, dead deps |
+| Blueprint | ✓ | + drift analysis |
+| Test generation | ✓ | + test-architect enforcement |
+| **Spec governance** (`spec-guardian`) | — | ✓ |
+| **Compliance enforcement** (GDPR / HIPAA / PCI-DSS / SOC 2) | — | ✓ |
+| **Zero-trust enforcement** (IAM, mTLS, RBAC, token TTLs) | — | ✓ |
+| **Observability checks** | — | ✓ |
+| **Health scoring + trend reports** | — | ✓ |
+| **Penetration testing** | — | ✓ |
+| **Log analysis** | — | ✓ |
+| Agents | 11 | 21 |
+| Commands | 17 | 27 |
+
+The enterprise tier is what compliance officers, CISOs, and engineering VPs need: continuous automated enforcement of GDPR/HIPAA/SOC 2, codebase health scores for leadership reporting, zero-trust architecture audits, and formal pentest reports — replacing work that would otherwise require 10–12 specialists.
 
 **[Learn more →](https://mantacron.github.io/manta-enterprise/)**
 
