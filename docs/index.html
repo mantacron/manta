@@ -21,7 +21,6 @@
       --accent-dim:  rgba(61, 186, 138, 0.08);
       --accent-glow: rgba(61, 186, 138, 0.18);
       --navy:        #3a7abf;
-      --navy-dark:   #1d3f6b;
       --text:        #e2ece8;
       --text-2:      #86a89e;
       --text-3:      #456058;
@@ -77,6 +76,7 @@
       margin: auto;
       margin-bottom: -24px !important;
     }
+
     .nav-logo-img-footer {
       height: 111px;
       margin-bottom: -36px;
@@ -116,22 +116,22 @@
       border-bottom-color: var(--accent);
     }
 
-    .nav-badge {
-      font-size: 11px;
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #071410;
+      font-size: 13px;
       font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-dim);
-      border: 1px solid rgba(61, 186, 138, 0.2);
-      padding: 3px 10px;
-      border-radius: 20px;
-      letter-spacing: 0.04em;
+      padding: 8px 18px;
+      border-radius: var(--radius-sm);
       text-decoration: none;
-      text-transform: uppercase;
-      transition: background 0.15s;
-      white-space: nowrap;
+      transition: opacity 0.15s, transform 0.15s;
+      letter-spacing: -0.01em;
     }
 
-    .nav-badge:hover { background: rgba(61, 186, 138, 0.14); }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
 
     /* ── Hero ── */
     .hero {
@@ -357,64 +357,6 @@
       margin: 0 2rem;
     }
 
-    /* ── How it works ── */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0;
-      margin-top: 4rem;
-      position: relative;
-    }
-
-    .steps::before {
-      content: '';
-      position: absolute;
-      top: 22px;
-      left: calc(12.5% + 22px);
-      right: calc(12.5% + 22px);
-      height: 1px;
-      background: linear-gradient(90deg, var(--accent), var(--navy));
-      opacity: 0.3;
-    }
-
-    .step {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 0 1rem;
-    }
-
-    .step-num {
-      width: 44px; height: 44px;
-      border-radius: 50%;
-      background: var(--surface);
-      border: 1px solid var(--border-2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--accent);
-      margin-bottom: 1.25rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .step h3 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      letter-spacing: -0.01em;
-    }
-
-    .step p {
-      font-size: 0.85rem;
-      color: var(--text-2);
-      line-height: 1.6;
-    }
-
     /* ── Pillars ── */
     .pillars-grid {
       display: grid;
@@ -526,115 +468,84 @@
       margin-top: 4px;
     }
 
-    /* ── Install section ── */
-    .install-wrap { max-width: 680px; margin: 0 auto; text-align: center; }
+    /* ── Get started ── */
+    .getstarted-wrap { max-width: 620px; margin: 0 auto; text-align: center; }
 
-    .install-block {
+    .getstarted-card {
       margin-top: 3rem;
       background: var(--surface);
       border: 1px solid var(--border-2);
       border-radius: var(--radius);
-      overflow: hidden;
+      padding: 2.5rem;
     }
 
-    .install-block .terminal-bar {
-      justify-content: flex-start;
+    .getstarted-card p {
+      font-size: 0.95rem;
+      color: var(--text-2);
+      margin-bottom: 2rem;
+      line-height: 1.7;
     }
 
-    .install-body {
-      padding: 1.75rem 2rem;
+    .install-cmd {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 20px;
       font-family: 'JetBrains Mono', monospace;
       font-size: 13px;
-      line-height: 2;
+      color: var(--accent);
       text-align: left;
+      margin-bottom: 2rem;
+      word-break: break-all;
     }
 
-    .install-comment { color: var(--text-3); }
-    .install-cmd     { color: var(--text); }
-    .install-cmd .cmd-dollar { color: var(--accent); }
-
-    .install-actions {
+    .getstarted-actions {
       display: flex;
       gap: 12px;
       justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .contact-alt { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-3); }
+    .contact-alt a { color: var(--accent); text-decoration: none; }
+    .contact-alt a:hover { text-decoration: underline; }
+
+    /* ── Enterprise banner ── */
+    .enterprise-banner {
       margin-top: 2rem;
-      flex-wrap: wrap;
-    }
-
-    /* ── Enterprise CTA ── */
-    .enterprise-cta {
-      background: var(--surface);
-      border: 1px solid var(--border-2);
-      border-radius: var(--radius);
-      padding: 2.5rem;
-      text-align: center;
-      margin-top: 5rem;
-    }
-
-    .enterprise-cta p {
-      font-size: 0.95rem;
-      color: var(--text-2);
-      line-height: 1.7;
-      margin-bottom: 1.5rem;
-      max-width: 540px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .enterprise-cta h3 {
-      font-size: 1.2rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.75rem;
-    }
-
-    .enterprise-features {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: center;
-      margin-bottom: 1.75rem;
-    }
-
-    .enterprise-tag {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-2);
-      background: var(--bg);
-      border: 1px solid var(--border-2);
-      padding: 4px 12px;
-      border-radius: 20px;
-    }
-
-    .btn-outline {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--accent);
-      font-size: 14px;
-      font-weight: 600;
-      padding: 11px 22px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(61, 186, 138, 0.3);
-      text-decoration: none;
-      transition: background 0.15s, border-color 0.15s, transform 0.15s;
-    }
-
-    .btn-outline:hover {
+      padding: 1.25rem 1.5rem;
       background: var(--accent-dim);
-      border-color: rgba(61, 186, 138, 0.5);
-      transform: translateY(-1px);
+      border: 1px solid rgba(61, 186, 138, 0.15);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
+
+    .enterprise-banner p {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      margin: 0;
+      text-align: left;
+    }
+
+    .enterprise-banner a {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .enterprise-banner a:hover { text-decoration: underline; }
 
     /* ── Footer ── */
     footer {
       padding: 2.5rem 2rem;
       border-top: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
     }
 
     .footer-copy { font-size: 13px; color: var(--text-3); }
@@ -656,9 +567,8 @@
       section { padding: 70px 1.25rem; }
       .for-grid { grid-template-columns: 1fr; }
       .pillars-grid { grid-template-columns: 1fr; gap: 1px; }
-      .steps { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
-      .steps::before { display: none; }
       footer { flex-direction: column; align-items: flex-start; padding: 2rem 1.25rem; }
+      .enterprise-banner { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -668,7 +578,6 @@
 <nav>
   <div class="nav-left">
     <a href="#features" class="nav-link">Features</a>
-    <a href="#install" class="nav-link">Install</a>
   </div>
   <div style="margin-top: -20px;">
     <img src="logo/white-outline-only.png" alt="Mantacron" class="nav-logo-img" />
@@ -676,7 +585,7 @@
   </div>
   <div class="nav-right">
     <a href="https://github.com/mantacron/manta" class="nav-link">GitHub</a>
-    <a href="https://mantacron.github.io/manta-enterprise/" class="nav-badge">Enterprise →</a>
+    <a href="#getstarted" class="nav-cta">Install free</a>
   </div>
 </nav>
 
@@ -688,19 +597,16 @@
     Open source · Free forever
   </div>
 
-  <h1>AI code review<br /><em>on every commit.</em></h1>
+  <h1>Stop reviewing what<br /><em>a machine can catch.</em></h1>
 
   <p class="hero-sub">
     Manta embeds 11 AI agents into your git workflow. Secrets, injection
-    flaws, bad migrations, and DRY violations are caught and blocked
-    before they land in your repo — automatically, in seconds.
+    flaws, N+1 queries, and unsafe migrations are blocked before they
+    reach your repo — automatically, on every commit.
   </p>
 
   <div class="hero-actions">
-    <a href="#install" class="btn-primary">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Install free
-    </a>
+    <a href="#getstarted" class="btn-primary">Install free</a>
     <a href="https://github.com/mantacron/manta" class="btn-secondary">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
       View on GitHub
@@ -716,17 +622,16 @@
       <span class="terminal-title">pre-commit — manta · 4 agents</span>
     </div>
     <div class="terminal-body">
-      <div><span class="t-dim">$ git commit -m "feat: add user login endpoint"</span></div>
-      <div><span class="t-accent">▶</span> <span class="t-white">Running pre-commit review · 4 agents · 6 staged files...</span></div>
+      <div><span class="t-dim">$ git commit -m "feat: add user login"</span></div>
+      <div><span class="t-accent">▶</span> <span class="t-white">Reviewing 6 staged files · 4 agents...</span></div>
       <br />
-      <div><span class="t-green">✓</span> <span class="t-dim">security-sentinel       </span><span class="t-white">No hardcoded secrets, injection flaws, or OWASP issues found.</span></div>
-      <div><span class="t-red">✗</span> <span class="t-dim">code-quality            </span><span class="t-red">CRITICAL: src/auth/login.ts:47 — DRY violation. Identical</span></div>
-      <div><span class="t-dim">                         validation logic exists in register.ts:31.</span></div>
-      <div><span class="t-dim">                         Extract to</span> <span class="t-accent">validateCredentials()</span><span class="t-dim">.</span></div>
-      <div><span class="t-green">✓</span> <span class="t-dim">perf-analyzer           </span><span class="t-white">No N+1 queries or blocking async operations detected.</span></div>
-      <div><span class="t-green">✓</span> <span class="t-dim">db-migration-guardian   </span><span class="t-white">Migration safe. Index added with CONCURRENTLY.</span></div>
+      <div><span class="t-green">✓</span> <span class="t-dim">security-sentinel     </span><span class="t-white">No secrets, injection flaws, or OWASP issues found.</span></div>
+      <div><span class="t-red">✗</span> <span class="t-dim">code-quality          </span><span class="t-red">CRITICAL  src/auth/login.ts:47 — DRY violation.</span></div>
+      <div><span class="t-dim">                       Identical validation logic in register.ts:31.</span></div>
+      <div><span class="t-green">✓</span> <span class="t-dim">perf-analyzer         </span><span class="t-white">No N+1 queries or blocking operations detected.</span></div>
+      <div><span class="t-green">✓</span> <span class="t-dim">db-migration-guardian </span><span class="t-white">Migration safe. Index added with CONCURRENTLY.</span></div>
       <br />
-      <div><span class="t-red">✗</span>  <span class="t-white">COMMIT BLOCKED — 1 critical issue must be resolved.</span></div>
+      <div><span class="t-red">✗</span>  <span class="t-white">COMMIT BLOCKED — 1 critical issue.</span></div>
       <div><span class="t-dim">   Run</span> <span class="t-accent">/project:fix</span> <span class="t-dim">for AI-generated fix suggestions.</span></div>
     </div>
   </div>
@@ -735,45 +640,12 @@
 <div class="divider"></div>
 
 
-<!-- ── How it works ── -->
-<section>
-  <div class="container">
-    <p class="section-label" style="text-align:center;">How it works</p>
-    <h2 class="section-title" style="text-align:center;">Install once. Works on every commit.</h2>
-
-    <div class="steps">
-      <div class="step">
-        <div class="step-num">01</div>
-        <h3>Install</h3>
-        <p>One bash command installs agents, hooks, and config into your repo.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">02</div>
-        <h3>Commit</h3>
-        <p>You work normally. On every <code style="color:var(--accent);font-size:0.8em;">git commit</code>, 4 agents run in parallel.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">03</div>
-        <h3>Review</h3>
-        <p>Critical findings block the commit. Warnings block the push. Nothing slips through.</p>
-      </div>
-      <div class="step">
-        <div class="step-num">04</div>
-        <h3>Fix</h3>
-        <p>Run <code style="color:var(--accent);font-size:0.8em;">/project:fix</code> for AI-generated, ready-to-apply suggestions.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-
-<!-- ── Features / Pillars ── -->
+<!-- ── Pillars ── -->
 <section id="features">
   <div class="container">
     <p class="section-label" style="text-align:center;">What's included</p>
-    <h2 class="section-title" style="text-align:center;">11 agents. 17 commands.<br />Everything you need to ship clean code.</h2>
+    <h2 class="section-title" style="text-align:center;">Everything you need to ship clean code.<br />Nothing you have to configure.</h2>
+    <p class="section-sub" style="text-align:center; margin-bottom: 0;">11 agents, 17 commands — security, code generation, quality enforcement, and docs automation all in one install.</p>
 
     <div class="pillars-grid">
 
@@ -782,15 +654,15 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3dba8a" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <h3>Security on every commit</h3>
-        <p>OWASP Top 10, hardcoded secrets, API keys, SQL injection, XSS, and auth bypass — all caught at commit time. Nothing leaves local without passing the security gate.</p>
+        <p>OWASP Top 10, hardcoded secrets, API keys, SQL injection, XSS, and auth bypass — all caught and blocked before they reach your repo. No configuration needed.</p>
       </div>
 
       <div class="pillar">
         <div class="pillar-icon navy">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3a7abf" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         </div>
-        <h3>Write complete implementations</h3>
-        <p><code style="font-size:0.85em;color:var(--accent)">/project:write "feature"</code> generates production-ready code — rate limiting, auth, validation, pagination, and transactions baked in. No TODOs, no stubs.</p>
+        <h3>Complete implementations</h3>
+        <p><code style="font-size:0.85em;color:var(--accent)">/project:write "feature"</code> generates production-ready code with rate limiting, auth, validation, pagination, and tests baked in. No TODOs, no stubs.</p>
       </div>
 
       <div class="pillar">
@@ -798,15 +670,15 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f5c842" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </div>
         <h3>Quality &amp; performance</h3>
-        <p>DRY violations, cyclomatic complexity, poor naming, N+1 queries, memory leaks, blocking async operations, and unsafe database migrations — caught before they compound.</p>
+        <p>DRY violations, cyclomatic complexity, N+1 queries, memory leaks, and unsafe database migrations are caught before they compound into something harder to fix.</p>
       </div>
 
       <div class="pillar">
         <div class="pillar-icon coral">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff8a6b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff8a6b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
         </div>
         <h3>Docs that stay current</h3>
-        <p><code style="font-size:0.85em;color:var(--accent)">/project:update-docs</code> keeps README and CHANGELOG in sync with your commits. PR summaries are generated automatically. Never write docs by hand again.</p>
+        <p><code style="font-size:0.85em;color:var(--accent)">/project:update-docs</code> keeps README and CHANGELOG in sync with your commits. PR summaries generated automatically after every push.</p>
       </div>
 
     </div>
@@ -816,7 +688,7 @@
 <div class="divider"></div>
 
 
-<!-- ── Built for ── -->
+<!-- ── For who ── -->
 <section class="for-section">
   <div class="container">
     <div class="for-grid">
@@ -824,12 +696,12 @@
         <p class="section-label">Built for</p>
         <h2 class="section-title">Solo developers<br />and small teams.</h2>
         <ul class="for-list" style="margin-top: 2rem;">
-          <li>Indie developers who want the same review quality as a well-staffed engineering team</li>
-          <li>Startups shipping fast who can't slow down for manual code review</li>
-          <li>Teams of 2–10 engineers who want consistent quality without a dedicated reviewer</li>
           <li>Developers who've been burned by a secret in git history or a production SQL injection</li>
+          <li>Startups shipping fast who can't slow down for manual code review on every PR</li>
+          <li>Teams of 2–10 engineers who want consistent quality without a dedicated reviewer</li>
           <li>Anyone who spends more than 30 minutes per PR on boilerplate security and style checks</li>
-          <li>Engineers who want to understand a codebase fast — <code style="font-size:0.85em;color:var(--accent)">/project:blueprint</code> maps it in seconds</li>
+          <li>Developers building on any language or stack — Manta is language-agnostic</li>
+          <li>Engineers who want to understand a new codebase fast — <code style="font-size:0.85em;color:var(--accent)">/project:blueprint</code> maps it in seconds</li>
         </ul>
       </div>
 
@@ -840,7 +712,7 @@
         </div>
         <div class="for-stat">
           <div class="for-stat-num">Free forever</div>
-          <div class="for-stat-label">open source · MIT license · no usage limits</div>
+          <div class="for-stat-label">open source · Apache 2.0 · no usage limits · no account needed</div>
         </div>
         <div class="for-stat">
           <div class="for-stat-num">~3 seconds</div>
@@ -854,68 +726,35 @@
 <div class="divider"></div>
 
 
-<!-- ── Install ── -->
-<section id="install">
+<!-- ── Get started ── -->
+<section id="getstarted">
   <div class="container">
-    <div class="install-wrap">
+    <div class="getstarted-wrap">
       <p class="section-label">Get started</p>
       <h2 class="section-title">One command.<br />Works on any project.</h2>
 
-      <div class="install-block">
-        <div class="terminal-bar">
-          <div class="terminal-dot"></div>
-          <div class="terminal-dot"></div>
-          <div class="terminal-dot"></div>
-          <span class="terminal-title">terminal</span>
-        </div>
-        <div class="install-body">
-          <div class="install-comment"># Install into your project</div>
-          <div class="install-cmd">
-            <span class="cmd-dollar">$</span>
-            gh repo clone mantacron/manta /tmp/manta &amp;&amp; \<br />
-            &nbsp; bash /tmp/manta/scripts/install.sh &amp;&amp; \<br />
-            &nbsp; rm -rf /tmp/manta
-          </div>
-          <br />
-          <div class="install-comment"># Open Claude Code and run setup</div>
-          <div class="install-cmd"><span class="cmd-dollar">$</span> claude</div>
-          <div class="install-cmd" style="color:var(--accent)">/project:init</div>
-          <br />
-          <div class="install-comment"># That's it. The next git commit triggers the pipeline.</div>
+      <div class="getstarted-card">
+        <p>Install into any existing repo or start fresh. The next <code style="color:var(--accent)">git commit</code> triggers the pipeline automatically.</p>
+
+        <div class="install-cmd">gh repo clone mantacron/manta /tmp/manta &amp;&amp; bash /tmp/manta/scripts/install.sh &amp;&amp; rm -rf /tmp/manta</div>
+
+        <div class="getstarted-actions">
+          <a href="https://github.com/mantacron/manta" class="btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+            View on GitHub
+          </a>
+          <a href="https://github.com/mantacron/manta/blob/main/README.md" class="btn-secondary">
+            Read the docs
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
         </div>
       </div>
 
-      <div class="install-actions">
-        <a href="https://github.com/mantacron/manta" class="btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
-          View on GitHub
-        </a>
-        <a href="https://github.com/mantacron/manta/blob/main/README.md" class="btn-secondary">
-          Read the docs
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
+      <p class="contact-alt">Questions or feedback? <a href="mailto:ray@mantacron.com">ray@mantacron.com</a></p>
 
-      <!-- Enterprise CTA -->
-      <div class="enterprise-cta">
-        <h3>Need more than the free tier?</h3>
-        <p>
-          Manta Enterprise adds compliance enforcement, codebase health scoring, penetration testing,
-          spec governance, and zero-trust architecture audits — built for regulated industries
-          and engineering teams that can't afford to get it wrong.
-        </p>
-        <div class="enterprise-features">
-          <span class="enterprise-tag">GDPR · HIPAA · PCI-DSS · SOC 2</span>
-          <span class="enterprise-tag">Health scoring &amp; trend reports</span>
-          <span class="enterprise-tag">Penetration testing</span>
-          <span class="enterprise-tag">Spec &amp; architecture governance</span>
-          <span class="enterprise-tag">Zero-trust enforcement</span>
-          <span class="enterprise-tag">21 agents · 27 commands</span>
-        </div>
-        <a href="https://mantacron.github.io/manta-enterprise/" class="btn-outline">
-          Explore Manta Enterprise
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
+      <div class="enterprise-banner">
+        <p>Need compliance enforcement, health scoring, or penetration testing? <strong style="color:var(--text)">Manta Enterprise</strong> adds 10 more agents built for regulated industries.</p>
+        <a href="https://mantacron.github.io/manta-enterprise/">Explore Enterprise →</a>
       </div>
 
     </div>
@@ -929,7 +768,7 @@
     <img src="logo/white-outline-only.png" alt="Mantacron" class="nav-logo-img-footer" />
     <div class="nav-logo-name"><span class="manta">MANTA</span><span class="cron">CRON</span></div>
     <div class="footer-copy" style="margin-top:0.5rem;">© 2026 Mantacron. Free to use under the Apache 2.0 license.</div>
-    <div class="footer-links" style="justify-content:center;margin-top:0.75rem;">
+    <div class="footer-links" style="justify-content:center; margin-top:0.75rem;">
       <a href="https://github.com/mantacron/manta">GitHub</a>
       <a href="https://mantacron.github.io/manta-enterprise/">Enterprise</a>
       <a href="mailto:ray@mantacron.com">Contact</a>
