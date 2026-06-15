@@ -15,6 +15,8 @@
 
 **11 agents. 17 commands. 2 git hooks. Works on new projects and existing codebases.**
 
+> Powered by [Claude](https://claude.ai/code) — requires the Claude Code CLI. If you already have it, you're set.
+
 ---
 
 ## What It Does
