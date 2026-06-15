@@ -18,7 +18,7 @@
 set -euo pipefail
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-REPO="${REPO:-your-org/manta}"
+REPO="${REPO:-mantacron/manta}"
 BRANCH="${BRANCH:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 FORCE=false
@@ -117,7 +117,7 @@ install_claude_md() {
 
 ## Manta — AI Review Pipeline
 
-This project uses [Manta](https://github.com/your-org/manta): an 11-agent AI pipeline for automated code review.
+This project uses [Manta](https://github.com/mantacron/manta): an 11-agent AI pipeline for automated code review.
 
 **On every `git commit`:** 4 agents review staged changes. CRITICAL findings block the commit.
 **On every `git push`:** 4 agents run a full branch review. CRITICAL and WARNING both block.

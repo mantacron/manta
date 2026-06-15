@@ -35,7 +35,7 @@ You don't change how you work. You just stop shipping bugs and secrets.
 
 ```bash
 # Install into your project
-bash /path/to/manta-community/scripts/install.sh
+gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 
 # Open Claude Code and run the setup wizard
 claude
@@ -70,7 +70,7 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `/project:security-scan` | Full repository security audit (secrets + OWASP) |
 | `/project:fix [--apply]` | AI fix suggestions for the last blocked commit; `--apply` walks through each with Y/n and writes to files |
 | `/project:explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
-| `/project:debt` | Harvest `// cathy-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
+| `/project:debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
 | `/project:scaffold "feature"` | Generate boilerplate matching your project's conventions |
 | `/project:write "feature"` | Write complete production-ready implementation — rate limiting, auth, validation, pagination, transactions baked in |
 | `/project:ui [path]` | Convert screenshots/wireframes into responsive, accessible components |
@@ -181,9 +181,7 @@ The enterprise tier is what compliance officers, CISOs, and engineering VPs need
 
 **From a local clone:**
 ```bash
-git clone https://github.com/your-org/manta-community /tmp/manta
-bash /tmp/manta/scripts/install.sh
-rm -rf /tmp/manta
+gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 ```
 
 **Force overwrite existing files:**

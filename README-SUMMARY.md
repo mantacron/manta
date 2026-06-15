@@ -7,7 +7,7 @@
 ## Install
 
 ```bash
-git clone https://github.com/your-org/manta-community /tmp/manta
+git clone https://github.com/mantacron/manta /tmp/manta
 bash /tmp/manta/scripts/install.sh
 rm -rf /tmp/manta
 claude
