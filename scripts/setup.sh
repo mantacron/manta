@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manta Community — Setup Script
+# Manta — Setup Script
 # Configures git hooks, validates environment, and prepares the project.
 
 set -euo pipefail
@@ -24,7 +24,7 @@ log_info()    { echo -e "  ${CYAN}ℹ${RESET} $1"; }
 # ─── Header ───────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════╗${RESET}"
-echo -e "${CYAN}${BOLD}║        Manta Community — Setup                     ║${RESET}"
+echo -e "${CYAN}${BOLD}║        Manta — Setup                     ║${RESET}"
 echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════╝${RESET}"
 echo ""
 

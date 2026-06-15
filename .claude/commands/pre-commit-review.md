@@ -11,7 +11,7 @@ observability checks run at push time instead (see pre-push-review.md).
 bash scripts/build-project-map.sh 2>/dev/null || true
 ```
 
-Read `.cathy-cache/project-map.json` if it exists. This gives you `high_risk_files`, `migration_files`, `entry_points`, and `stack`. Share this context with agents so they don't re-scan the repo.
+Read `.manta-cache/project-map.json` if it exists. This gives you `high_risk_files`, `migration_files`, `entry_points`, and `stack`. Share this context with agents so they don't re-scan the repo.
 
 ### Step 1: Load suppressions
 

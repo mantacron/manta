@@ -1,4 +1,4 @@
-# Manta Community
+# Manta
 
 Automated code review on every commit. Security scanning, code quality, performance analysis — all in your git workflow.
 

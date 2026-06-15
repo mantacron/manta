@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Manta Community — Installer
+# Manta — Installer
 #
-# Installs the Manta Community Edition into any project.
+# Installs the Manta Edition into any project.
 # 11 agents · 14 commands · 2 git hooks
 # Safe to re-run — existing files are preserved unless --force is passed.
 #
 # Usage:
 #   # From a local clone:
-#   bash /path/to/manta-community/scripts/install.sh
+#   bash /path/to/manta/scripts/install.sh
 #
 #   # Force overwrite existing files:
 #   bash install.sh --force
@@ -45,7 +45,7 @@ log_info()  { echo -e "  ${CYAN}ℹ${RESET} $1"; }
 # ─── Header ───────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════╗${RESET}"
-echo -e "${CYAN}${BOLD}║        Manta Community — Installer                 ║${RESET}"
+echo -e "${CYAN}${BOLD}║        Manta — Installer                 ║${RESET}"
 echo -e "${CYAN}${BOLD}║  11 agents · 14 commands · automated code review   ║${RESET}"
 echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════╝${RESET}"
 echo ""
@@ -106,7 +106,7 @@ install_claude_md() {
     return
   fi
 
-  if grep -q "manta-community" CLAUDE.md 2>/dev/null; then
+  if grep -q "manta" CLAUDE.md 2>/dev/null; then
     log_skip "CLAUDE.md (Manta reference already present)"
     return
   fi
@@ -115,9 +115,9 @@ install_claude_md() {
 
 ---
 
-## Manta Community — AI Review Pipeline
+## Manta — AI Review Pipeline
 
-This project uses [Manta Community](https://github.com/your-org/manta): an 11-agent AI pipeline for automated code review.
+This project uses [Manta](https://github.com/your-org/manta): an 11-agent AI pipeline for automated code review.
 
 **On every `git commit`:** 4 agents review staged changes. CRITICAL findings block the commit.
 **On every `git push`:** 4 agents run a full branch review. CRITICAL and WARNING both block.
@@ -314,7 +314,7 @@ if git rev-parse --git-dir &>/dev/null; then
 
 ## Manta Subdirectory Mode
 
-Manta Community is installed at \`${MANTA_RELPATH}/\` inside the parent project.
+Manta is installed at \`${MANTA_RELPATH}/\` inside the parent project.
 All agents and commands must target the **parent directory** for project files — not the \`${MANTA_RELPATH}/\` folder itself.
 
 **Rules when in subdirectory mode:**

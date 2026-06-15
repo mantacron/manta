@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Build a lightweight project relationship map from source files.
 # Cached per git commit hash — auto-invalidates when HEAD changes.
-# Output: .cathy-cache/project-map.json
+# Output: .manta-cache/project-map.json
 #
 # Usage: bash scripts/build-project-map.sh [--force]
 # Called by pre-commit hook; agents read the cached map for context-efficient review.
 
 set -euo pipefail
 
-CACHE_DIR=".cathy-cache"
+CACHE_DIR=".manta-cache"
 MAP_FILE="$CACHE_DIR/project-map.json"
 HASH_FILE="$CACHE_DIR/project-map.hash"
 FORCE="${1:-}"
@@ -30,7 +30,7 @@ fi
 echo "↳ Building project map (${CURRENT_HASH:0:7})..." >&2
 
 # ─── Exclusion patterns ───────────────────────────────────────────────────────
-EXCLUDE_DIRS="node_modules|vendor|dist|build|out|.next|.nuxt|__pycache__|.venv|venv|target|.gradle|coverage|.nyc_output|.git|pentesting|reports|.cathy-cache"
+EXCLUDE_DIRS="node_modules|vendor|dist|build|out|.next|.nuxt|__pycache__|.venv|venv|target|.gradle|coverage|.nyc_output|.git|pentesting|reports|.manta-cache"
 
 # ─── File discovery ───────────────────────────────────────────────────────────
 SOURCE_FILES=$(find . -type f \

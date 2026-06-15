@@ -1,4 +1,4 @@
-# Manta Community — Quick Reference
+# Manta — Quick Reference
 
 11-agent AI review pipeline embedded in your git workflow. Catches security issues, bugs, and bad migrations before they land in your repo. Free forever.
 
