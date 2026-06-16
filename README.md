@@ -25,8 +25,8 @@ Manta embeds an automated review team into your git workflow. On every `git comm
 
 | When | Agents | What Gets Caught |
 |------|--------|-----------------|
-| `git commit` | 4 agents | Secrets, injection flaws, OWASP Top 10, N+1 queries, bad migrations, DRY violations, naming issues |
-| `git push` | 4 agents | Full branch review — same checks, broader scope |
+| `git commit` | 3–4 agents | Secrets, injection flaws, OWASP Top 10, N+1 queries, bad migrations (trigger-routed), DRY violations, naming issues |
+| `git push` | 3–4 agents | Full branch review — same checks, broader scope (db-migration trigger-routed) |
 | On demand | All agents | Security scan, blueprint, scaffold, UI generation, test generation |
 
 You don't change how you work. You just stop shipping bugs and secrets.
@@ -149,8 +149,8 @@ Manta Enterprise is built for engineering teams in regulated industries. On top 
 
 | | Community | Enterprise |
 |---|:---:|:---:|
-| Pre-commit review (4 agents) | ✓ | ✓ |
-| Pre-push review | 4 agents | 9 agents |
+| Pre-commit review (4 agents, db-migration trigger-routed) | ✓ | ✓ |
+| Pre-push review | 3–4 agents (trigger-routed) | up to 9 agents (trigger-routed) |
 | Code generation (scaffold, write, ui) | ✓ | ✓ |
 | Security scan | OWASP + secrets | + CVE audit, license check, dead deps |
 | Blueprint | ✓ | + drift analysis |

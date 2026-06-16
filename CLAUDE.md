@@ -35,7 +35,7 @@ CRITICAL? → Commit BLOCKED
 WARNING? → Commit allowed, shown prominently
      → Run /project:fix for AI-generated fix suggestions
      ↓
-git push → 4-agent full branch review
+git push → 3–4 agent branch review (db-migration-guardian trigger-routed: skips when no migration files in diff)
      ↓
 PR opened → PR summary generated automatically
 ```
@@ -69,7 +69,7 @@ PR opened → PR summary generated automatically
 | `/project:audit [focus]` | Full codebase audit → `reports/YYYY-MM-DD-report.md` with score and quick wins |
 | `/project:review` | Full review of staged changes (4 agents) |
 | `/project:pre-commit-review` | Structured output for pre-commit git hook (4 agents: security, quality, perf, migrations) |
-| `/project:pre-push-review` | Structured output for pre-push git hook (4 agents: full branch diff) |
+| `/project:pre-push-review` | Structured output for pre-push git hook (3–4 agents: db-migration trigger-routed) |
 | `/project:generate-tests` | Interactive test generation for uncovered code |
 | `/project:update-docs` | Update README.md and CHANGELOG.md |
 | `/project:security-scan` | Full security audit (OWASP + secrets) |

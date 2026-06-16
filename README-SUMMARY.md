@@ -19,8 +19,8 @@ claude
 ## How It Works
 
 ```
-git commit  →  4 agents  →  CRITICAL blocks commit
-git push    →  4 agents  →  CRITICAL + WARNING blocks push
+git commit  →  4 agents (db-migration trigger-routed)  →  CRITICAL blocks commit
+git push    →  3–4 agents (db-migration trigger-routed)  →  CRITICAL + WARNING blocks push
 ```
 
 **CRITICAL** = security risk, broken migration, dangerous flaw — blocks immediately.  

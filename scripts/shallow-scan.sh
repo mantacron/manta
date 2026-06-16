@@ -65,9 +65,9 @@ HAS_MIGRATIONS=""
 
 # ─── Spec/constitution file presence ─────────────────────────────────────────
 HAS_SPEC=""
-[[ -f "spec/SPEC.md" ]] || [[ -f "../spec/SPEC.md" ]] && HAS_SPEC="true"
+{ [[ -f "spec/SPEC.md" ]] || [[ -f "../spec/SPEC.md" ]]; } && HAS_SPEC="true"
 HAS_CONSTITUTION=""
-[[ -f "CONSTITUTION.md" ]] || [[ -f "../CONSTITUTION.md" ]] && HAS_CONSTITUTION="true"
+{ [[ -f "CONSTITUTION.md" ]] || [[ -f "../CONSTITUTION.md" ]]; } && HAS_CONSTITUTION="true"
 
 # ─── Compute totals and determine agents to skip ─────────────────────────────
 TOTAL_SIGNALS=$(( SECRETS + INJECTION + CRYPTO ))
