@@ -57,6 +57,7 @@ PR opened → PR summary generated automatically
 | `pr-summarizer` | `.claude/agents/pr-summarizer.md` | PR summary generation |
 | `blueprint-agent` | `.claude/agents/blueprint-agent.md` | Stack detection, API inventory, ER diagram, module map |
 | `ui-ux-agent` | `.claude/agents/ui-ux-agent.md` | Convert designs into responsive, accessible components |
+| `wiki-agent` | `.claude/agents/wiki-agent.md` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 
 ---
 
@@ -81,6 +82,7 @@ PR opened → PR summary generated automatically
 | `/project:write "description"` | Write complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions) baked in |
 | `/project:ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |
 | `/project:capture-patterns` | Scan codebase and auto-generate `PATTERNS.md` + `manta.patterns.json` |
+| `/project:wiki [--url=URL]` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 
 ---
 

@@ -1,6 +1,6 @@
 # Manta — Quick Reference
 
-11-agent AI review pipeline embedded in your git workflow. Catches security issues, bugs, and bad migrations before they land in your repo. Free forever.
+12-agent AI review pipeline embedded in your git workflow. Catches security issues, bugs, and bad migrations before they land in your repo. Free forever.
 
 ---
 
@@ -46,7 +46,7 @@ SKIP_CLAUDE_PUSH_REVIEW=1 git push
 
 ---
 
-## All 11 Agents
+## All 12 Agents
 
 | Agent | Purpose |
 |-------|---------|
@@ -61,6 +61,7 @@ SKIP_CLAUDE_PUSH_REVIEW=1 git push
 | `pr-summarizer` | Auto-generates PR summaries |
 | `blueprint-agent` | Stack map, API inventory, ER diagram, module tree |
 | `ui-ux-agent` | Design files → accessible, DRY components |
+| `wiki-agent` | Product wiki → `docs/wiki/` (routes, screenshots, features, spec comparison) |
 
 ---
 
@@ -79,6 +80,7 @@ SKIP_CLAUDE_PUSH_REVIEW=1 git push
 | `/project:generate-tests` | Interactively generate missing tests |
 | `/project:update-docs` | Update README and CHANGELOG |
 | `/project:capture-patterns` | Auto-detect conventions → write to PATTERNS.md |
+| `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — routes, screenshots, features, spec comparison |
 
 ---
 
@@ -95,6 +97,6 @@ src/generated/**     DRY       # Generated code
 
 ## Want More?
 
-**Manta Enterprise (Cathy)** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 21 agents, 25 commands.
+**Manta Enterprise (Cathy)** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 23 agents, 29 commands.
 
 Full documentation: [README.md](README.md)

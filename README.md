@@ -13,7 +13,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**11 agents. 17 commands. 2 git hooks. Works on new projects and existing codebases.**
+**12 agents. 18 commands. 2 git hooks. Works on new projects and existing codebases.**
 
 > Powered by [Claude](https://claude.ai/code) — requires the Claude Code CLI. If you already have it, you're set.
 
@@ -105,6 +105,7 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `/project:generate-tests` | Interactively generate missing tests |
 | `/project:update-docs` | Keep README and CHANGELOG in sync with recent changes |
 | `/project:capture-patterns` | Auto-detect your team's coding conventions, write to `PATTERNS.md` |
+| `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 
 ---
 
@@ -123,6 +124,7 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `pr-summarizer` | Auto-generates PR summaries for reviewers |
 | `blueprint-agent` | Stack detection, API inventory, ER diagram, module map, component tree |
 | `ui-ux-agent` | Converts design files into responsive, accessible, DRY-compliant components |
+| `wiki-agent` | Generates product wiki in `docs/wiki/` — route/screen discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 
 ---
 
@@ -187,8 +189,8 @@ Manta Enterprise is built for engineering teams in regulated industries. On top 
 | **Health scoring + trend reports** | — | ✓ |
 | **Penetration testing** | — | ✓ |
 | **Log analysis** | — | ✓ |
-| Agents | 11 | 21 |
-| Commands | 17 | 27 |
+| Agents | 12 | 23 |
+| Commands | 18 | 29 |
 
 The enterprise tier is what compliance officers, CISOs, and engineering VPs need: continuous automated enforcement of GDPR/HIPAA/SOC 2, codebase health scores for leadership reporting, zero-trust architecture audits, and formal pentest reports — replacing work that would otherwise require 10–12 specialists.
 
