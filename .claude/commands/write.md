@@ -33,7 +33,7 @@ What feature would you like to write? Describe it in plain English — include a
 Invoke the `code-writer` agent with the full feature description.
 
 The agent will:
-1. Load `cathy.patterns.json` / `PATTERNS.md` — project conventions are authoritative
+1. Load `manta.patterns.json` / `PATTERNS.md` — project conventions are authoritative
 2. Detect the stack (framework, ORM, validation library, auth, logger, rate limiter)
 3. Find the most similar existing feature as a pattern donor (for conventions)
 4. Detect existing infrastructure (auth middleware, error hierarchy, logger, rate limiter)

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Claude Code Pre-Push Hook
-# Runs a 4-agent review on the branch diff before push.
+# Runs a 3–4 agent review on the branch diff before push (db-migration trigger-routed).
 # Blocks push if CRITICAL or WARNING issues are found (security, quality, perf, migrations).
 #
 # Setup: run scripts/setup.sh (or: git config core.hooksPath .githooks)

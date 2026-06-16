@@ -7,7 +7,7 @@
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                               M A N T A                                       ║
-║                  11-agent · 17-command AI pipeline · free                     ║
+║                  12-agent · 18-command AI pipeline · free                     ║
 ║                                                                               ║
 ║         Every commit reviewed.  Every secret caught.  Free forever.           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -109,7 +109,7 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 
 ---
 
-## All 11 Agents
+## All 12 Agents
 
 | Agent | Purpose |
 |-------|---------|

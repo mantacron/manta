@@ -29,7 +29,7 @@ git push    →  3–4 agents (db-migration trigger-routed)  →  CRITICAL + WAR
 
 Bypass (emergency only):
 ```bash
-SKIP_MANTA_REVIEW=1 git commit
+SKIP_CLAUDE_REVIEW=1 git commit
 SKIP_CLAUDE_PUSH_REVIEW=1 git push
 ```
 
