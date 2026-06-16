@@ -35,16 +35,41 @@ You don't change how you work. You just stop shipping bugs and secrets.
 
 ## Quickstart
 
+### New project
+
 ```bash
-# Install into your project
+# 1. Install
 gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 
-# Open Claude Code and run the setup wizard
+# 2. Open Claude Code
 claude
-/project:init
+/project:poc          # fastest: 3 questions → spec + skeleton in under 5 minutes
+# — or —
+/project:init         # full wizard: spec + architecture + scaffold + first commit
 ```
 
-That's it. The next `git commit` will trigger the review pipeline.
+Then use the build loop:
+```bash
+/project:scaffold "feature"   # boilerplate skeleton with TODOs to fill in
+# — or —
+/project:write "feature"      # complete implementation — auth, validation, pagination baked in
+
+git commit                    # review hook fires automatically
+```
+
+### Existing project
+
+```bash
+# 1. Install into your existing repo
+gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
+
+# 2. Open Claude Code
+claude
+/project:audit               # health scan → report with score + quick wins
+/project:capture-patterns    # detect your team's conventions → PATTERNS.md
+```
+
+Done. Every `git commit` now triggers the review pipeline automatically. If a commit is blocked, run `/project:fix` for AI-generated suggestions.
 
 ---
 
