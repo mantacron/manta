@@ -178,6 +178,26 @@ Two commands generate code. Use the right one for the job:
 
 ---
 
+## AI Tool Compatibility
+
+| | Claude Code | Codex CLI | Gemini CLI | GitHub Copilot |
+|---|:---:|:---:|:---:|:---:|
+| Git hook review pipeline (pre-commit / pre-push) | ✓ | ✓ | ✓ | ✓ |
+| Multi-agent parallel execution | ✓ | — | — | — |
+| `/project:` slash commands | ✓ | — | — | — |
+| Run any command manually | ✓ | ✓ | ✓ | — |
+| Coding guidance (conventions, patterns, security) | ✓ | ✓ | ✓ | ✓ |
+
+**Codex and Gemini** can run any command by passing the prompt file directly — same logic, executes sequentially instead of as parallel sub-agents:
+```bash
+codex "$(cat .claude/commands/audit.md)"
+gemini "$(cat .claude/commands/security-scan.md)"
+```
+
+**GitHub Copilot** participates via `.github/copilot-instructions.md` — project conventions, security rules, and patterns are enforced when writing code in the IDE. It does not run the audit pipeline.
+
+---
+
 ## What It Does Not Do
 
 Manta won't make product decisions, design your system, or replace engineering judgment. What it eliminates is the *mechanical, repeatable* review work — catching the kinds of issues a thorough code reviewer would catch, before the PR is even opened.
