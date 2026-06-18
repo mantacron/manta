@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Claude Code Pre-Push Hook
+# Manta Pre-Push Hook
 # Runs a 3–4 agent review on the branch diff before push (db-migration trigger-routed).
 # Blocks push if CRITICAL or WARNING issues are found (security, quality, perf, migrations).
+# Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
 #
 # Setup: run scripts/setup.sh (or: git config core.hooksPath .githooks)
 
@@ -15,25 +16,58 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
+# ─── AI tool detection ────────────────────────────────────────────────────────
+# Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
+# Override with: AI_BIN=gemini git push
+# Legacy override: CLAUDE_BIN=claude git push
+
+detect_ai_tool() {
+  if [[ -n "${AI_BIN:-}" ]] && command -v "$AI_BIN" &>/dev/null; then
+    echo "$AI_BIN"; return
+  fi
+  if [[ -n "${CLAUDE_BIN:-}" ]] && command -v "${CLAUDE_BIN}" &>/dev/null; then
+    echo "${CLAUDE_BIN}"; return
+  fi
+  if command -v claude &>/dev/null; then echo "claude"; return; fi
+  if command -v codex &>/dev/null; then echo "codex"; return; fi
+  if command -v gemini &>/dev/null; then echo "gemini"; return; fi
+  echo ""
+}
+
+run_ai_review() {
+  local tool="$1"
+  local prompt="$2"
+  local hook_timeout="${3:-180}"
+  case "$tool" in
+    claude) timeout "$hook_timeout" claude --print "$prompt" 2>&1 ;;
+    codex)  timeout "$hook_timeout" codex -q "$prompt" 2>&1 ;;
+    gemini) timeout "$hook_timeout" gemini -p "$prompt" 2>&1 ;;
+    *)      return 1 ;;
+  esac
+}
+
+AI_TOOL=$(detect_ai_tool)
+
 # ─── Locate Manta directory ───────────────────────────────────────────────────
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANTA_DIR="$(cd "$HOOK_DIR/.." && pwd)"
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-CLAUDE_BIN="${CLAUDE_BIN:-claude}"
+CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-180}"
 SKIP_VAR="SKIP_CLAUDE_PUSH_REVIEW"
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
-  echo -e "${YELLOW}[claude]${RESET} Push review skipped (${SKIP_VAR}=1)"
+  echo -e "${YELLOW}[manta]${RESET} Push review skipped (${SKIP_VAR}=1)"
   exit 0
 fi
 
-# ─── Check claude is available ────────────────────────────────────────────────
-if ! command -v "$CLAUDE_BIN" &>/dev/null; then
-  echo -e "${YELLOW}[claude]${RESET} Warning: 'claude' CLI not found — skipping push review"
+# ─── Check AI tool is available ───────────────────────────────────────────────
+if [[ -z "$AI_TOOL" ]]; then
+  echo -e "${YELLOW}[manta]${RESET} Warning: no AI CLI found — skipping push review"
+  echo "         Install one of: claude (npm i -g @anthropic-ai/claude-code), codex (npm i -g @openai/codex), gemini (npm i -g @google/gemini-cli)"
   exit 0
 fi
 
@@ -51,7 +85,7 @@ if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
 fi
 
 if [[ -z "$REMOTE_SHA" ]]; then
-  echo -e "${CYAN}[claude]${RESET} Cannot determine base — skipping push review"
+  echo -e "${CYAN}[manta]${RESET} Cannot determine base — skipping push review"
   exit 0
 fi
 
@@ -66,10 +100,10 @@ FILE_COUNT=$(echo "$CHANGED_FILES" | wc -l | tr -d ' ')
 
 echo ""
 echo -e "${CYAN}${BOLD}┌─────────────────────────────────────────────────┐${RESET}"
-echo -e "${CYAN}${BOLD}│          Claude Code Pre-Push Review            │${RESET}"
+echo -e "${CYAN}${BOLD}│            Manta Pre-Push Review                │${RESET}"
 echo -e "${CYAN}${BOLD}└─────────────────────────────────────────────────┘${RESET}"
 echo ""
-echo -e "${CYAN}[claude]${RESET} Reviewing ${FILE_COUNT} file(s) — security, quality, performance, database migrations..."
+echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Reviewing ${FILE_COUNT} file(s) — security, quality, performance, database migrations..."
 echo ""
 
 # ─── Build review prompt from command file ────────────────────────────────────
@@ -78,32 +112,24 @@ export LOCAL_SHA REMOTE_SHA
 
 PROMPT=$(cat "$MANTA_DIR/.claude/commands/pre-push-review.md" 2>/dev/null || echo "Review the branch diff for CRITICAL issues across security, code quality, and performance. Output PUSH_VERDICT: PASS or PUSH_VERDICT: BLOCK.")
 
-# ─── Run security scan ────────────────────────────────────────────────────────
+# ─── Run AI review ────────────────────────────────────────────────────────────
 SCAN_OUTPUT=""
 CLAUDE_EXIT=0
 
-if command -v timeout &>/dev/null; then
-  SCAN_OUTPUT=$(
-    cd "$MANTA_DIR" && \
-    GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
-    timeout "$HOOK_TIMEOUT" "$CLAUDE_BIN" --print "$PROMPT" 2>&1
-  ) || CLAUDE_EXIT=$?
-else
-  SCAN_OUTPUT=$(
-    cd "$MANTA_DIR" && \
-    GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
-    "$CLAUDE_BIN" --print "$PROMPT" 2>&1
-  ) || CLAUDE_EXIT=$?
-fi
+SCAN_OUTPUT=$(
+  cd "$MANTA_DIR" && \
+  GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
+  run_ai_review "$AI_TOOL" "$PROMPT" "$HOOK_TIMEOUT"
+) || CLAUDE_EXIT=$?
 
 # ─── Handle errors ────────────────────────────────────────────────────────────
 if [[ $CLAUDE_EXIT -eq 124 ]]; then
-  echo -e "${YELLOW}[claude]${RESET} Security scan timed out — allowing push"
+  echo -e "${YELLOW}[manta]${RESET} Push review timed out — allowing push"
   exit 0
 fi
 
 if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT"; then
-  echo -e "${YELLOW}[claude]${RESET} Security scan error — allowing push"
+  echo -e "${YELLOW}[manta]${RESET} Push review error — allowing push"
   exit 0
 fi
 
@@ -125,7 +151,7 @@ mkdir -p "$GIT_ROOT/reports"
   printf "---\n\n"
   printf "%s\n" "$SCAN_OUTPUT"
 } > "$REPORT_FILE"
-echo -e "${CYAN}[claude]${RESET} Scan saved: ${REPORT_FILE}"
+echo -e "${CYAN}[manta]${RESET} Scan saved: ${REPORT_FILE}"
 echo ""
 
 # ─── Parse verdict ────────────────────────────────────────────────────────────
@@ -140,7 +166,7 @@ if echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: BLOCK"; then
   echo -e "${RED}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Fix the critical issues above, then push again.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code and run ${BOLD}/project:fix${RESET}"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_PUSH_REVIEW=1 git push${RESET}"
   echo ""
   exit 1
@@ -156,7 +182,7 @@ elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: WARN"; then
   echo -e "${YELLOW}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Warnings must be resolved before pushing.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code and run ${BOLD}/project:fix${RESET}"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_PUSH_REVIEW=1 git push${RESET}"
   echo ""
   exit 1

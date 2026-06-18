@@ -15,7 +15,7 @@
 
 **12 agents. 18 commands. 2 git hooks. Works on new projects and existing codebases.**
 
-> Powered by [Claude](https://claude.ai/code) — requires the Claude Code CLI. If you already have it, you're set.
+> Works with **[Claude Code](https://claude.ai/code)**, **[OpenAI Codex](https://github.com/openai/codex)**, **[Google Gemini CLI](https://github.com/google-gemini/gemini-cli)**, and **[GitHub Copilot](https://github.com/features/copilot)**. Git hooks auto-detect whichever CLI is installed.
 
 ---
 
@@ -41,20 +41,26 @@ You don't change how you work. You just stop shipping bugs and secrets.
 # 1. Install
 gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 
-# 2. Open Claude Code
+# 2. Open your AI assistant:
+
+# Claude Code (full /project: command suite):
 claude
 /project:poc          # fastest: 3 questions → spec + skeleton in under 5 minutes
 # — or —
 /project:init         # full wizard: spec + architecture + scaffold + first commit
+
+# Codex or Gemini (natural language — describe what you want):
+# codex "set up a new project: create a spec, directory structure, and first commit"
+# gemini "set up a new project: create a spec, directory structure, and first commit"
 ```
 
 Then use the build loop:
 ```bash
-/project:scaffold "feature"   # boilerplate skeleton with TODOs to fill in
+/project:scaffold "feature"   # boilerplate skeleton with TODOs (Claude Code)
 # — or —
-/project:write "feature"      # complete implementation — auth, validation, pagination baked in
+/project:write "feature"      # complete implementation — auth, validation, pagination baked in (Claude Code)
 
-git commit                    # review hook fires automatically
+git commit                    # review hook fires automatically (all tools)
 ```
 
 ### Existing project
@@ -63,13 +69,13 @@ git commit                    # review hook fires automatically
 # 1. Install into your existing repo
 gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 
-# 2. Open Claude Code
-claude
-/project:audit               # health scan → report with score + quick wins
-/project:capture-patterns    # detect your team's conventions → PATTERNS.md
+# 2. Open your AI assistant:
+claude                       # — or: codex / gemini
+/project:audit               # health scan → report with score + quick wins (Claude Code)
+/project:capture-patterns    # detect your team's conventions → PATTERNS.md (Claude Code)
 ```
 
-Done. Every `git commit` now triggers the review pipeline automatically. If a commit is blocked, run `/project:fix` for AI-generated suggestions.
+Done. Every `git commit` now triggers the review pipeline automatically — regardless of which AI tool you use. If a commit is blocked, run `/project:fix` (Claude Code) or ask your AI assistant to suggest fixes.
 
 ---
 
@@ -200,7 +206,11 @@ The enterprise tier is what compliance officers, CISOs, and engineering VPs need
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/code) CLI installed (`npm install -g @anthropic-ai/claude-code`)
+- One AI CLI — whichever you prefer:
+  - [Claude Code](https://claude.ai/code): `npm install -g @anthropic-ai/claude-code` — full `/project:` command suite
+  - [OpenAI Codex](https://github.com/openai/codex): `npm install -g @openai/codex` — review pipeline + natural-language code gen
+  - [Google Gemini CLI](https://github.com/google-gemini/gemini-cli): `npm install -g @google/gemini-cli` — review pipeline + natural-language code gen
+  - [GitHub Copilot](https://github.com/features/copilot): VS Code / JetBrains extension — code writing with Manta's conventions baked in
 - Git repository
 - Any language (TypeScript, Python, Go, Rust, Ruby, Java, Kotlin, C/C#/C++, PHP, Swift)
 

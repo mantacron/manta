@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Claude Code Pre-Commit Hook
+# Manta Pre-Commit Hook
 # Runs multi-agent code review on staged changes.
 # Blocks commit if CRITICAL issues are found.
+# Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
 #
 # Setup: run scripts/setup.sh (or: git config core.hooksPath .githooks)
 
@@ -15,6 +16,38 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
+# ─── AI tool detection ────────────────────────────────────────────────────────
+# Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
+# Override with: AI_BIN=gemini git commit
+# Legacy override: CLAUDE_BIN=claude git commit
+
+detect_ai_tool() {
+  if [[ -n "${AI_BIN:-}" ]] && command -v "$AI_BIN" &>/dev/null; then
+    echo "$AI_BIN"; return
+  fi
+  if [[ -n "${CLAUDE_BIN:-}" ]] && command -v "${CLAUDE_BIN}" &>/dev/null; then
+    echo "${CLAUDE_BIN}"; return
+  fi
+  if command -v claude &>/dev/null; then echo "claude"; return; fi
+  if command -v codex &>/dev/null; then echo "codex"; return; fi
+  if command -v gemini &>/dev/null; then echo "gemini"; return; fi
+  echo ""
+}
+
+run_ai_review() {
+  local tool="$1"
+  local prompt="$2"
+  local hook_timeout="${3:-120}"
+  case "$tool" in
+    claude) timeout "$hook_timeout" claude --print "$prompt" 2>&1 ;;
+    codex)  timeout "$hook_timeout" codex -q "$prompt" 2>&1 ;;
+    gemini) timeout "$hook_timeout" gemini -p "$prompt" 2>&1 ;;
+    *)      return 1 ;;
+  esac
+}
+
+AI_TOOL=$(detect_ai_tool)
+
 # ─── Locate Manta directory ───────────────────────────────────────────────────
 # Works whether Manta is at the project root or in a subfolder (e.g. project/manta/)
 HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,7 +55,7 @@ MANTA_DIR="$(cd "$HOOK_DIR/.." && pwd)"
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-CLAUDE_BIN="${CLAUDE_BIN:-claude}"
+CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-120}"  # seconds before giving up (whole review)
 SKIP_VAR="SKIP_CLAUDE_REVIEW"
 
@@ -35,14 +68,14 @@ export AGENT_TIMEOUT_SENTINEL AGENT_TIMEOUT_QUALITY AGENT_TIMEOUT_PERF AGENT_TIM
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
-  echo -e "${YELLOW}[claude]${RESET} Review skipped (${SKIP_VAR}=1)"
+  echo -e "${YELLOW}[manta]${RESET} Review skipped (${SKIP_VAR}=1)"
   exit 0
 fi
 
-# ─── Check claude is available ────────────────────────────────────────────────
-if ! command -v "$CLAUDE_BIN" &>/dev/null; then
-  echo -e "${YELLOW}[claude]${RESET} Warning: 'claude' CLI not found — skipping review"
-  echo "         Install with: npm install -g @anthropic-ai/claude-code"
+# ─── Check AI tool is available ───────────────────────────────────────────────
+if [[ -z "$AI_TOOL" ]]; then
+  echo -e "${YELLOW}[manta]${RESET} Warning: no AI CLI found — skipping review"
+  echo "         Install one of: claude (npm i -g @anthropic-ai/claude-code), codex (npm i -g @openai/codex), gemini (npm i -g @google/gemini-cli)"
   echo "         Or set SKIP_CLAUDE_REVIEW=1 to bypass"
   exit 0
 fi
@@ -56,17 +89,17 @@ fi
 # ─── Skip non-code files only commits ─────────────────────────────────────────
 STAGED_CODE_FILES=$(git diff --cached --name-only | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|java|kt|swift|c|cpp|h|hpp|cs|php|sh|bash)$' || true)
 if [[ -z "$STAGED_CODE_FILES" ]]; then
-  echo -e "${CYAN}[claude]${RESET} Only non-code files staged — skipping code review"
+  echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Only non-code files staged — skipping code review"
   exit 0
 fi
 
 # ─── Run review ───────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}┌─────────────────────────────────────────────────┐${RESET}"
-echo -e "${CYAN}${BOLD}│         Claude Code Pre-Commit Review           │${RESET}"
+echo -e "${CYAN}${BOLD}│           Manta Pre-Commit Review               │${RESET}"
 echo -e "${CYAN}${BOLD}└─────────────────────────────────────────────────┘${RESET}"
 echo ""
-echo -e "${CYAN}[claude]${RESET} Reviewing $(echo "$STAGED_CODE_FILES" | wc -l | tr -d ' ') staged file(s)..."
+echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Reviewing $(echo "$STAGED_CODE_FILES" | wc -l | tr -d ' ') staged file(s)..."
 
 # ─── Shallow pre-scan ─────────────────────────────────────────────────────────
 SHALLOW_RESULT=""
@@ -76,9 +109,9 @@ if [[ -f "$MANTA_DIR/scripts/shallow-scan.sh" ]]; then
   SIGNAL_COUNT=$(echo "$SHALLOW_RESULT" | grep "^SIGNALS:" | cut -d' ' -f2 || echo "0")
 
   if [[ "$SHALLOW_STATUS" == "SIGNALS_FOUND" ]]; then
-    echo -e "${YELLOW}[claude]${RESET} Shallow scan: ${SIGNAL_COUNT} signal(s) — running full agent review"
+    echo -e "${YELLOW}[manta]${RESET} Shallow scan: ${SIGNAL_COUNT} signal(s) — running full agent review"
   else
-    echo -e "${GREEN}[claude]${RESET} Shallow scan: clean — running optimized review"
+    echo -e "${GREEN}[manta]${RESET} Shallow scan: clean — running optimized review"
   fi
 fi
 
@@ -87,39 +120,31 @@ if [[ -f "$MANTA_DIR/scripts/build-project-map.sh" ]]; then
   cd "$GIT_ROOT" && bash "$MANTA_DIR/scripts/build-project-map.sh" > /dev/null 2>&1 || true
 fi
 
-echo -e "${CYAN}[claude]${RESET} Running: security-sentinel, code-quality, perf-analyzer, db-migration-guardian"
+echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Running: security-sentinel, code-quality, perf-analyzer, db-migration-guardian"
 echo ""
 
 # Build the review prompt
-REVIEW_PROMPT=$(cat "$MANTA_DIR/.claude/commands/pre-commit-review.md" 2>/dev/null || echo "Review the staged git changes. Check for critical issues in spec compliance, code quality, security vulnerabilities, and performance. Output COMMIT_VERDICT: PASS or COMMIT_VERDICT: BLOCK.")
+REVIEW_PROMPT=$(cat "$MANTA_DIR/.claude/commands/pre-commit-review.md" 2>/dev/null || echo "Review the staged git changes. Check for critical issues in code quality, security vulnerabilities, and performance. Output COMMIT_VERDICT: PASS or COMMIT_VERDICT: BLOCK.")
 
-# Run claude with timeout
+# Run AI review
 REVIEW_OUTPUT=""
 CLAUDE_EXIT=0
 
-if command -v timeout &>/dev/null; then
-  REVIEW_OUTPUT=$(
-    cd "$MANTA_DIR" && \
-    GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
-    timeout "$HOOK_TIMEOUT" "$CLAUDE_BIN" --print "$REVIEW_PROMPT" 2>&1
-  ) || CLAUDE_EXIT=$?
-else
-  REVIEW_OUTPUT=$(
-    cd "$MANTA_DIR" && \
-    GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
-    "$CLAUDE_BIN" --print "$REVIEW_PROMPT" 2>&1
-  ) || CLAUDE_EXIT=$?
-fi
+REVIEW_OUTPUT=$(
+  cd "$MANTA_DIR" && \
+  GIT_DIR="$GIT_ROOT/.git" GIT_WORK_TREE="$GIT_ROOT" \
+  run_ai_review "$AI_TOOL" "$REVIEW_PROMPT" "$HOOK_TIMEOUT"
+) || CLAUDE_EXIT=$?
 
-# ─── Handle timeout or claude error ───────────────────────────────────────────
+# ─── Handle timeout or error ──────────────────────────────────────────────────
 if [[ $CLAUDE_EXIT -eq 124 ]]; then
-  echo -e "${YELLOW}[claude]${RESET} Review timed out after ${HOOK_TIMEOUT}s — allowing commit"
+  echo -e "${YELLOW}[manta]${RESET} Review timed out after ${HOOK_TIMEOUT}s — allowing commit"
   echo "         Increase timeout: export CLAUDE_HOOK_TIMEOUT=180"
   exit 0
 fi
 
 if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT"; then
-  echo -e "${YELLOW}[claude]${RESET} Review encountered an error — allowing commit"
+  echo -e "${YELLOW}[manta]${RESET} Review encountered an error — allowing commit"
   echo "         Error: $REVIEW_OUTPUT" | head -5
   exit 0
 fi
@@ -141,7 +166,7 @@ mkdir -p "$GIT_ROOT/reports"
   printf "---\n\n"
   printf "%s\n" "$REVIEW_OUTPUT"
 } > "$REPORT_FILE"
-echo -e "${CYAN}[claude]${RESET} Review saved: ${REPORT_FILE}"
+echo -e "${CYAN}[manta]${RESET} Review saved: ${REPORT_FILE}"
 echo ""
 
 # ─── Parse verdict ────────────────────────────────────────────────────────────
@@ -156,7 +181,7 @@ if echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: BLOCK"; then
   echo -e "${RED}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Fix the critical issues above, then commit again.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code and run ${BOLD}/project:fix${RESET}"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
   echo ""
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_REVIEW=1 git commit${RESET}"
   echo ""
@@ -173,7 +198,7 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: WARN"; then
   echo -e "${YELLOW}${BOLD}$WARN_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Warnings above should be addressed before pushing.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code and run ${BOLD}/project:fix${RESET}"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
   echo -e "${YELLOW}Note:${RESET} Warnings ${BOLD}will block${RESET} the pre-push review."
   echo ""
   exit 0
@@ -185,7 +210,7 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: PASS"; then
 
 else
   # No clear verdict found — allow commit but warn
-  echo -e "${YELLOW}[claude]${RESET} Could not parse review verdict — allowing commit"
-  echo "         Run /project:review for a full interactive review"
+  echo -e "${YELLOW}[manta]${RESET} Could not parse review verdict — allowing commit"
+  echo "         Run /project:review in Claude Code for a full interactive review"
   exit 0
 fi

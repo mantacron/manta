@@ -246,6 +246,15 @@ fi
 log_step "Installing CLAUDE.md"
 install_claude_md
 
+# ─── Step 8a: Install AI tool instruction files ───────────────────────────────
+log_step "Installing AI tool instruction files (AGENTS.md, GEMINI.md, .github/copilot-instructions.md)"
+
+install_file "AGENTS.md" "AGENTS.md"
+install_file "GEMINI.md" "GEMINI.md"
+
+mkdir -p .github
+install_file ".github/copilot-instructions.md" ".github/copilot-instructions.md"
+
 # ─── Step 8b: Install pattern config templates ───────────────────────────────
 log_step "Installing pattern configuration (PATTERNS.md + manta.patterns.json)"
 
@@ -359,10 +368,13 @@ echo -e "${CYAN}${BOLD}═══════════════════
 echo ""
 echo -e "  ${GREEN}${BOLD}✓ 11 agents${RESET}    installed to ${CYAN}.claude/agents/${RESET}"
 echo -e "  ${GREEN}${BOLD}✓ 14 commands${RESET}  installed to ${CYAN}.claude/commands/${RESET}"
-echo -e "  ${GREEN}${BOLD}✓ 2 git hooks${RESET}  installed to ${CYAN}.githooks/${RESET}"
+echo -e "  ${GREEN}${BOLD}✓ 2 git hooks${RESET}  installed to ${CYAN}.githooks/${RESET} (claude · codex · gemini)"
 echo -e "  ${GREEN}${BOLD}✓ PATTERNS.md${RESET}  + ${CYAN}manta.patterns.json${RESET} — pattern enforcement config"
 echo -e "  ${GREEN}${BOLD}✓ .mantaignore${RESET} template for suppressing false positives"
 echo -e "  ${GREEN}${BOLD}✓ ui-designs/${RESET} folder — drop designs here for ${CYAN}/project:ui${RESET}"
+echo -e "  ${GREEN}${BOLD}✓ AGENTS.md${RESET}    — instruction file for OpenAI Codex CLI"
+echo -e "  ${GREEN}${BOLD}✓ GEMINI.md${RESET}    — instruction file for Google Gemini CLI"
+echo -e "  ${GREEN}${BOLD}✓ copilot-instructions.md${RESET} — instruction file for GitHub Copilot"
 echo ""
 echo -e "${BOLD}Next steps:${RESET}"
 echo ""

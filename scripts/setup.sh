@@ -52,16 +52,35 @@ log_ok "Hook scripts made executable"
 git config core.hooksPath "$HOOKS_DIR"
 log_ok "Git configured to use .githooks/ (git config core.hooksPath .githooks)"
 
-# ─── Step 3: Check Claude CLI ─────────────────────────────────────────────────
-log_step "Checking Claude Code CLI"
+# ─── Step 3: Check AI CLI (Claude Code / Codex / Gemini) ─────────────────────
+log_step "Checking AI CLI (Claude Code / Codex / Gemini)"
+
+AI_FOUND=false
 
 if command -v claude &>/dev/null; then
   CLAUDE_VERSION=$(claude --version 2>/dev/null || echo "unknown")
-  log_ok "Claude CLI found: $CLAUDE_VERSION"
-else
-  log_warn "Claude CLI not found — hooks will warn but won't block commits"
-  log_info "Install: npm install -g @anthropic-ai/claude-code"
-  log_info "Or: https://claude.ai/code"
+  log_ok "Claude Code found: $CLAUDE_VERSION (primary — full /project: command support)"
+  AI_FOUND=true
+fi
+
+if command -v codex &>/dev/null; then
+  CODEX_VERSION=$(codex --version 2>/dev/null || echo "unknown")
+  log_ok "Codex CLI found: $CODEX_VERSION (supported — hooks auto-detect)"
+  AI_FOUND=true
+fi
+
+if command -v gemini &>/dev/null; then
+  GEMINI_VERSION=$(gemini --version 2>/dev/null || echo "unknown")
+  log_ok "Gemini CLI found: $GEMINI_VERSION (supported — hooks auto-detect)"
+  AI_FOUND=true
+fi
+
+if [[ "$AI_FOUND" == "false" ]]; then
+  log_warn "No AI CLI found — hooks will skip reviews until one is installed"
+  log_info "Install Claude Code (recommended): npm install -g @anthropic-ai/claude-code"
+  log_info "Or Codex CLI: npm install -g @openai/codex"
+  log_info "Or Gemini CLI: npm install -g @google/gemini-cli"
+  log_info "Note: /project: slash commands require Claude Code"
 fi
 
 # ─── Step 4: Detect tech stack and check tools ────────────────────────────────
