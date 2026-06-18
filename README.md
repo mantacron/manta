@@ -69,13 +69,23 @@ git commit                    # review hook fires automatically (all tools)
 # 1. Install into your existing repo
 gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 
-# 2. Open your AI assistant:
-claude                       # — or: codex / gemini
-/project:audit               # health scan → report with score + quick wins (Claude Code)
-/project:capture-patterns    # detect your team's conventions → PATTERNS.md (Claude Code)
+# 2. Run an initial audit — pick your tool:
+
+# Claude Code:
+claude
+/project:audit               # health scan → report with score + quick wins
+/project:capture-patterns    # detect your team's conventions → PATTERNS.md
+
+# Codex:
+codex "run a full audit of this codebase and report security issues, code quality problems, and quick wins"
+codex "scan this codebase and detect our coding conventions — naming, folder structure, error handling"
+
+# Gemini:
+gemini "run a full audit of this codebase and report security issues, code quality problems, and quick wins"
+gemini "scan this codebase and detect our coding conventions — naming, folder structure, error handling"
 ```
 
-Done. Every `git commit` now triggers the review pipeline automatically — regardless of which AI tool you use. If a commit is blocked, run `/project:fix` (Claude Code) or ask your AI assistant to suggest fixes.
+Done. Every `git commit` now triggers the review pipeline automatically — regardless of which AI tool you use. If a commit is blocked, run `/project:fix` in Claude Code, or ask Codex/Gemini to suggest fixes for the issues listed above.
 
 ---
 
