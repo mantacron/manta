@@ -285,6 +285,38 @@ bash scripts/install.sh --force
 
 ---
 
+## Updating to the Latest Version
+
+When fixes, new agents, or new commands are pushed to Manta, run the installer again from inside your project root:
+
+```bash
+# Pull and apply the latest Manta agents, commands, and hooks:
+gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh --force && rm -rf /tmp/manta
+```
+
+The `--force` flag overwrites all Manta boilerplate files (`agents/`, `commands/`, `.githooks/`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) with the latest versions. Your project files (`spec/SPEC.md`, `ARCHITECTURE.md`, `RISKS.md`, `CONSTITUTION.md`, `PATTERNS.md`, `.env`, `.gitignore`, `README.md`, `CHANGELOG.md`) are **never touched** — only Manta's own files are updated.
+
+**What gets updated:**
+- All agent `.md` files in `.claude/agents/`
+- All command `.md` files in `.claude/commands/`
+- Git hooks in `.githooks/`
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`
+- Helper scripts in `scripts/`
+
+**What is never overwritten:**
+- Your spec, architecture, risks, and constitution files
+- Your `.env` and `.gitignore`
+- Your `README.md`, `CHANGELOG.md`, and `manta.patterns.json`
+- Any file in `src/`, `app/`, or your project source directories
+
+After updating, commit the changed files:
+```bash
+git add .claude/ .githooks/ scripts/ CLAUDE.md AGENTS.md GEMINI.md
+git commit -m "chore: update Manta to latest"
+```
+
+---
+
 ## Suppressing False Positives
 
 Add a `.mantaignore` file to your project root:
