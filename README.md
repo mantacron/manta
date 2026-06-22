@@ -124,7 +124,7 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 | `/project:rpi:research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
 | `/project:rpi:plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
-| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
+| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/implement/IMPLEMENT.md` |
 
 ---
 
@@ -157,11 +157,11 @@ Step 4 — /project:rpi:implement {slug}  ← phased code with gates, never all 
 | `doc-keeper` | Keeps README and CHANGELOG in sync with code changes |
 | `pr-summarizer` | Auto-generates PR summaries for reviewers |
 | `blueprint-agent` | Stack detection, API inventory, ER diagram, module map, component tree |
-| `ui-ux-agent` | Converts design files into responsive, accessible, DRY-compliant components |
+| `ui-component-writer` | Converts design files into responsive, accessible, DRY-compliant components |
 | `wiki-agent` | Generates product wiki in `docs/wiki/` — route/screen discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 | `requirement-parser` | Parses `rpi/{slug}/REQUEST.md` into structured requirements, complexity estimate, and clarifying questions |
 | `product-manager` | Evaluates feature viability — user value, strategic fit, constitution compliance; recommends Build / Defer / Decline |
-| `ux-designer` | Designs user journeys, component inventory, interaction states, and accessibility notes for RPI features |
+| `ux-planner` | Designs user journeys, component inventory, interaction states, and accessibility notes for RPI features |
 | `senior-software-engineer` | Technical feasibility assessment + phased implementation (dual role: research + code execution) |
 | `technical-cto-advisor` | Final GO / CONDITIONAL GO / DEFER / NO-GO decision with confidence score and rationale |
 | `constitutional-validator` | Validates features against CONSTITUTION.md — mission alignment, human oversight, data privacy, reversibility |
@@ -250,8 +250,8 @@ Manta Enterprise is built for engineering teams in regulated industries. On top 
 | **Health scoring + trend reports** | — | ✓ |
 | **Penetration testing** | — | ✓ |
 | **Log analysis** | — | ✓ |
-| Agents | 12 | 23 |
-| Commands | 18 | 29 |
+| Agents | 19 | 30 |
+| Commands | 21 | 32 |
 
 The enterprise tier is what compliance officers, CISOs, and engineering VPs need: continuous automated enforcement of GDPR/HIPAA/SOC 2, codebase health scores for leadership reporting, zero-trust architecture audits, and formal pentest reports — replacing work that would otherwise require 10–12 specialists.
 

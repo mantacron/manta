@@ -27,11 +27,16 @@ You receive a feature description. Examples:
 Before finding a pattern donor, check if the project has documented its conventions:
 
 ```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+
 # Prefer JSON config (machine-readable, precise)
-cat manta.patterns.json 2>/dev/null
+cat ${PREFIX}manta.patterns.json 2>/dev/null
 
 # Fall back to PATTERNS.md if JSON config not present
-cat PATTERNS.md 2>/dev/null
+cat ${PREFIX}PATTERNS.md 2>/dev/null
 ```
 
 **If `manta.patterns.json` exists**: use its values as authoritative for naming, folder structure, error handling, logging, and API shapes. Skip inference in Step 4 for any section that has defined values.
@@ -62,10 +67,10 @@ Search for the most similar existing feature. Be specific — if the feature is 
 ```bash
 # Find similar files — look at structure, not content
 # For a REST endpoint:
-find . -name "*.ts" -o -name "*.py" -o -name "*.go" | xargs grep -l "router\.\|app\.\|@app\.\|http\.Handle" 2>/dev/null | head -5
+find . -name "*.ts" -o -name "*.py" -o -name "*.go" | grep -v node_modules | grep -v vendor | grep -v dist | xargs grep -l "router\.\|app\.\|@app\.\|http\.Handle" 2>/dev/null | head -5
 
 # For a model/entity:
-find . -name "*.ts" -o -name "*.py" | xargs grep -l "class.*Model\|@Entity\|schema(" 2>/dev/null | head -5
+find . -name "*.ts" -o -name "*.py" | grep -v node_modules | grep -v vendor | grep -v dist | xargs grep -l "class.*Model\|@Entity\|schema(" 2>/dev/null | head -5
 ```
 
 Pick the **one file most similar** to what you're building. Read it completely — this is your template.
@@ -74,7 +79,7 @@ Then find its test:
 ```bash
 # Find test for the pattern donor
 basename_no_ext=$(basename [pattern_donor] | sed 's/\.[^.]*$//')
-find . -name "*${basename_no_ext}*test*" -o -name "*test*${basename_no_ext}*" -o -name "*${basename_no_ext}*.spec.*" 2>/dev/null | head -3
+find . \( -name "*${basename_no_ext}*test*" -o -name "*test*${basename_no_ext}*" -o -name "*${basename_no_ext}*.spec.*" \) ! -path "*/node_modules/*" ! -path "*/vendor/*" ! -path "*/dist/*" 2>/dev/null | head -3
 ```
 
 Read the test file completely.

@@ -4,6 +4,8 @@ description: RPI Step 4 — Execute phased implementation with validation gates.
 argument-hint: "<feature-slug> [--phase N]"
 ---
 
+**Begin by outputting:** `[ Manta Enterprise — RPI: Implement ]`
+
 # RPI: Implement
 
 **RPI Step 4 of 4**: Implementation

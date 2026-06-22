@@ -27,6 +27,13 @@ grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-ki
 
 ## Your Review Process
 
+```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+```
+
 1. Read the diff — identify changed files and what changed
 2. Run Semgrep SAST if available (see section below) — captures data-flow vulns LLM review misses
 3. Check dependencies for known CVEs using available package manager tools

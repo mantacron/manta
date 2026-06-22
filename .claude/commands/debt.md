@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Debt Ledger ]`
+**Begin by outputting:** `[ Manta Enterprise — Debt Ledger ]`
 
 Harvest `// manta-defer:` inline annotations from the codebase into a structured deferral ledger. Flags intentional shortcuts that have no stated exit condition — the ones that silently rot into permanent tech debt.
 
@@ -131,3 +131,12 @@ No untracked deferrals. All intentional shortcuts have stated exit conditions.
 - Do not evaluate whether the shortcuts are good or bad — just surface them
 - If `ceiling:` is missing, output "unspecified" — the ceiling matters but its absence is less urgent than a missing trigger
 - The `// manta-defer:` annotation is for intentional, reviewed shortcuts — not for hiding real bugs or TODOs
+
+## Next Steps
+
+```
+Next steps:
+  NO-TRIGGER entries found → add `trigger: <condition>` or resolve the shortcut
+  → /project:audit          include debt count in full project health report
+  → /project:review         run full review now that deferrals are visible
+```

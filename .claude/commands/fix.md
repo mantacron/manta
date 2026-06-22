@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Fix ]`
+**Begin by outputting:** `[ Manta Enterprise — Fix ]`
 
 Get AI-generated fix suggestions for issues found in the last commit review, or for issues found in a specific review report.
 

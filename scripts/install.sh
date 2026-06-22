@@ -155,7 +155,7 @@ AGENTS=(
   "doc-keeper"
   "pr-summarizer"
   "blueprint-agent"
-  "ui-ux-agent"
+  "ui-component-writer"
 )
 
 mkdir -p .claude/agents
@@ -232,7 +232,7 @@ Drop design files here — screenshots, Figma exports, wireframes — and run:
 /project:ui
 ```
 
-Manta's `ui-ux-agent` will convert them into responsive, accessible, DRY-compliant
+Manta's `ui-component-writer` will convert them into responsive, accessible, DRY-compliant
 components that match your project's conventions.
 
 Supported formats: PNG, JPG, JPEG, SVG, WEBP, PDF

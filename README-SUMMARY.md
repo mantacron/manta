@@ -60,7 +60,7 @@ SKIP_CLAUDE_PUSH_REVIEW=1 git push
 | `doc-keeper` | Keeps README and CHANGELOG in sync |
 | `pr-summarizer` | Auto-generates PR summaries |
 | `blueprint-agent` | Stack map, API inventory, ER diagram, module tree |
-| `ui-ux-agent` | Design files → accessible, DRY components |
+| `ui-component-writer` | Design files → accessible, DRY components |
 | `wiki-agent` | Product wiki → `docs/wiki/` (routes, screenshots, features, spec comparison) |
 
 ---

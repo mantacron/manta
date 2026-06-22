@@ -2,9 +2,9 @@
 description: Convert design files (screenshots, Figma exports, wireframes) into production-ready UI components matching the project's conventions. Reads from ui-designs/ by default. Enforces DRY by detecting existing components to reuse. Generates responsive, accessible, typed components with tests and optional Storybook stories.
 ---
 
-**Begin by outputting:** `[ Manta — UI/UX ]`
+**Begin by outputting:** `[ Manta Enterprise — UI/UX ]`
 
-You are orchestrating the `ui-ux-agent` to convert design inputs into production-ready components.
+You are orchestrating the `ui-component-writer` to convert design inputs into production-ready components.
 
 ## Usage
 
@@ -26,7 +26,7 @@ You are orchestrating the `ui-ux-agent` to convert design inputs into production
 Read the specified file. If it's an image, attach it to the context for visual analysis.
 
 ### If `--dry-run` was passed:
-Set a flag `DRY_RUN=true`. Continue with normal processing (Steps 2–4) but the ui-ux-agent must **not write any files**. Instead it outputs:
+Set a flag `DRY_RUN=true`. Continue with normal processing (Steps 2–4) but the ui-component-writer must **not write any files**. Instead it outputs:
 - A summary of what would be generated: file names, component names, states to implement
 - Which existing components would be reused
 - Which new components would be created
@@ -42,7 +42,7 @@ End with: `> Run without --dry-run to generate these files.`
    ```
 2. Read the existing component file.
 3. Proceed to Step 2 (DRY pre-check is skipped — we already know the target).
-4. Pass the existing component source to ui-ux-agent with instruction: "Update this component to match the new design. Preserve the existing props API where possible — add new props, don't remove them. If the API must break, flag it clearly."
+4. Pass the existing component source to ui-component-writer with instruction: "Update this component to match the new design. Preserve the existing props API where possible — add new props, don't remove them. If the API must break, flag it clearly."
 
 ### If `--audit` was passed:
 Skip to the DRY audit section below.
@@ -126,16 +126,16 @@ For each design file to process:
 
 ---
 
-## Step 4: Invoke the ui-ux-agent
+## Step 4: Invoke the ui-component-writer
 
-Pass all context to the `ui-ux-agent`:
+Pass all context to the `ui-component-writer`:
 - The image(s) or description
 - Design tokens detected
 - Similar existing components found
 - Project conventions (PATTERNS.md / manta.patterns.json)
 - Any companion spec notes
 
-The agent handles the full generation. Refer to `.claude/agents/ui-ux-agent.md` for the complete process.
+The agent handles the full generation. Refer to `.claude/agents/ui-component-writer.md` for the complete process.
 
 **Key requirements the agent MUST enforce:**
 

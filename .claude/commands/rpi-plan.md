@@ -4,6 +4,8 @@ description: RPI Step 3 — Generate comprehensive planning documentation for a 
 argument-hint: "<feature-slug>"
 ---
 
+**Begin by outputting:** `[ Manta Enterprise — RPI: Plan ]`
+
 # RPI: Plan
 
 **RPI Step 3 of 4**: Planning & Specification
@@ -78,7 +80,7 @@ The `documentation-analyst-writer` writes the output to `rpi/{slug}/plan/pm.md`.
 
 ## Step 3 — UX Design (ux.md)
 
-**Agent:** `ux-designer`
+**Agent:** `ux-planner`
 
 Pass: requirements, research findings, and existing UI patterns discovered in research.
 

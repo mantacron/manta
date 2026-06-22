@@ -1,3 +1,5 @@
+**Begin by outputting:** `[ Manta Enterprise — Pre-Commit Review ]`
+
 Non-interactive pre-commit review for use by the git pre-commit hook. Reviews staged changes and outputs a machine-readable verdict.
 
 Runs 4 agents only — the high-signal blockers. Spec alignment, test coverage, compliance, and

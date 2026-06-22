@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Cathy — Write ]`
+**Begin by outputting:** `[ Manta Enterprise — Write ]`
 
 Write a complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions, audit trail) baked in. No TODOs, no placeholder logic.
 

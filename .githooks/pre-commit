@@ -123,8 +123,12 @@ fi
 echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Running: security-sentinel, code-quality, perf-analyzer, db-migration-guardian"
 echo ""
 
-# Build the review prompt
+# Build the review prompt — prepend shallow scan results so agents don't re-run it
 REVIEW_PROMPT=$(cat "$MANTA_DIR/.claude/commands/pre-commit-review.md" 2>/dev/null || echo "Review the staged git changes. Check for critical issues in code quality, security vulnerabilities, and performance. Output COMMIT_VERDICT: PASS or COMMIT_VERDICT: BLOCK.")
+
+if [[ -n "$SHALLOW_RESULT" ]]; then
+  REVIEW_PROMPT="$(printf '## Shallow Pre-Scan Results\n\n%s\n\n---\n\n%s' "$SHALLOW_RESULT" "$REVIEW_PROMPT")"
+fi
 
 # Run AI review
 REVIEW_OUTPUT=""

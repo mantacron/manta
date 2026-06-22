@@ -164,7 +164,7 @@ grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-ki
 | `doc-keeper` | README and CHANGELOG maintenance |
 | `pr-summarizer` | PR summary generation |
 | `blueprint-agent` | Stack detection, API map, ER diagram, module map |
-| `ui-ux-agent` | Convert designs into accessible components |
+| `ui-component-writer` | Convert designs into accessible components |
 | `wiki-agent` | Generate product wiki in `docs/wiki/` |
 
 ---

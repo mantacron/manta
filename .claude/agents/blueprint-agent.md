@@ -18,6 +18,11 @@ You receive a MODE from the command:
 ## Step 0 — Orientation
 
 ```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+
 # What files exist?
 ls -1 2>/dev/null
 ls src/ app/ lib/ backend/ frontend/ api/ 2>/dev/null | head -20 || true
@@ -365,7 +370,7 @@ In **both mode**: after generating from files, add a **Drift Analysis** section:
 ## Step 7 — Write docs/BLUEPRINT.md
 
 ```bash
-mkdir -p docs
+mkdir -p "${PREFIX}docs"
 ```
 
 Write the complete file with this structure:

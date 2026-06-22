@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Scaffold ]`
+**Begin by outputting:** `[ Manta Enterprise — Scaffold ]`
 
 Generate consistent boilerplate for a new feature, matching the project's existing conventions exactly.
 

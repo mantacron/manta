@@ -14,7 +14,14 @@ Never scan `node_modules`, `vendor`, `dist`, `build`, `.next`, `__pycache__`, `v
 
 ## Your Review Process
 
-1. Understand the scale context from `spec/SPEC.md` section 8 (Performance Targets)
+```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+```
+
+1. Understand the scale context from `${PREFIX}spec/SPEC.md` section 8 (Performance Targets)
 2. Read the changed code and trace data flows
 3. Think about what happens with 100x the expected data volume
 4. Check each dimension below

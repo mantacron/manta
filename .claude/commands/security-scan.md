@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Security Scan ]`
+**Begin by outputting:** `[ Manta Enterprise — Security Scan ]`
 
 Run a security audit of the entire repository — secrets, injection vulnerabilities, and OWASP Top 10 checks.
 
@@ -99,3 +99,12 @@ If a report for today already exists, append a counter: `reports/YYYY-MM-DD-2-se
 
 Tell the user:
 > "Security scan complete. Report saved to `reports/[filename]`."
+
+### Step 7: Next Steps
+
+```
+Next steps:
+  CLEAN             → /project:audit             include in full health report
+  NEEDS_ATTENTION   → /project:fix               get fix suggestions for flagged files
+  CRITICAL_ISSUES   → address immediately before any commits or releases
+```

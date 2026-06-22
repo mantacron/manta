@@ -1,3 +1,5 @@
+**Begin by outputting:** `[ Manta Enterprise — Pre-Push Review ]`
+
 Non-interactive pre-push review for use by the git pre-push hook. Reviews the full branch diff and outputs a machine-readable verdict.
 
 Runs 3–4 agents. security-sentinel, code-quality, and perf-analyzer always run. db-migration-guardian is trigger-routed — only runs if migration files are present in the diff.

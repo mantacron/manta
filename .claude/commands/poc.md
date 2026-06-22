@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — POC Init ]`
+**Begin by outputting:** `[ Manta Enterprise — POC Init ]`
 
 Fast-track initialization for proofs of concept and quick experiments.
 No spec interview. No risk register. No architecture phases.

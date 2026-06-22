@@ -38,8 +38,13 @@ Never scan `node_modules`, `vendor`, `dist`, `build`, `.next`, `__pycache__`, `v
 ## Step 0: Load Project Patterns
 
 ```bash
-cat cathy.patterns.json 2>/dev/null
-cat PATTERNS.md 2>/dev/null
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+
+cat ${PREFIX}cathy.patterns.json 2>/dev/null
+cat ${PREFIX}PATTERNS.md 2>/dev/null
 ```
 
 **Priority**: `cathy.patterns.json` non-null fields → `PATTERNS.md` filled sections → infer from pattern donor.

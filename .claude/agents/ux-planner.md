@@ -1,5 +1,5 @@
 ---
-name: ux-designer
+name: ux-planner
 description: Designs user experience flows, interaction patterns, and UI specifications for features in the RPI planning phase. Produces ux.md with wireframe descriptions, user journeys, and component specs.
 model: sonnet
 tools: Read, Bash, Glob, Grep

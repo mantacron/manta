@@ -12,6 +12,15 @@ Your job is to catch unsafe migrations before they reach production.
 
 Never scan `node_modules`, `vendor`, `dist`, `build`, `__pycache__`, `venv`, `target`, `.gradle`, `.git`, `pentesting`, `reports`. See CLAUDE.md for the full exclusion pattern.
 
+## Step 0: Detect Subdirectory Mode
+
+```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+```
+
 ## Step 1: Detect Migration Files
 
 Check if any staged changes include migration files:

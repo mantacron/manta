@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Explain ]`
+**Begin by outputting:** `[ Manta Enterprise — Explain ]`
 
 Get a plain-language explanation of what a file, function, module, or concept does — including its callers, dependencies, and role in the architecture.
 

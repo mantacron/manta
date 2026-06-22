@@ -29,12 +29,17 @@ grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-ki
 
 ### Step 0: Load Project Patterns (if available)
 
-Before reviewing anything else, check for project-specific conventions:
+Before reviewing anything else, detect subdirectory mode and load project conventions:
 
 ```bash
+# Detect subdirectory mode (manta installed inside a project subfolder)
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+CATHY_DIR=$(pwd)
+[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+
 # JSON config takes precedence over PATTERNS.md
-cat manta.patterns.json 2>/dev/null
-cat PATTERNS.md 2>/dev/null
+cat ${PREFIX}manta.patterns.json 2>/dev/null
+cat ${PREFIX}PATTERNS.md 2>/dev/null
 ```
 
 Load in this priority order: `manta.patterns.json` → `PATTERNS.md` → no project patterns.

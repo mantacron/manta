@@ -1,6 +1,6 @@
 # /project:blueprint — Project Blueprint Generator
 
-**Begin by outputting:** `[ Manta — Blueprint ]`
+**Begin by outputting:** `[ Manta Enterprise — Blueprint ]`
 
 Generates `docs/BLUEPRINT.md` — a living map of the project: stack, architecture diagram, API inventory, DB schema ER diagram, backend module map, and frontend component tree.
 

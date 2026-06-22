@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta — Review · 4 agents ]`
+**Begin by outputting:** `[ Manta Enterprise — Review · 4 agents ]`
 
 Run a pre-commit review on the staged changes. Orchestrate the 4 core review agents and produce a consolidated report.
 

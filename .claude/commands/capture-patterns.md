@@ -2,6 +2,8 @@
 description: Scan the existing codebase and auto-generate PATTERNS.md with detected conventions. Run once, review the output, then commit it so all agents enforce your team's patterns.
 ---
 
+**Begin by outputting:** `[ Manta Enterprise — Capture Patterns ]`
+
 You are scanning this codebase to detect and document its coding patterns.
 
 Your output is `PATTERNS.md` — the machine-readable pattern registry that `code-quality` enforces at pre-commit and `scaffolding-agent` uses when generating new code.

@@ -60,11 +60,11 @@ PR opened → PR summary generated automatically
 | `doc-keeper` | `.claude/agents/doc-keeper.md` | README and CHANGELOG maintenance |
 | `pr-summarizer` | `.claude/agents/pr-summarizer.md` | PR summary generation |
 | `blueprint-agent` | `.claude/agents/blueprint-agent.md` | Stack detection, API inventory, ER diagram, module map |
-| `ui-ux-agent` | `.claude/agents/ui-ux-agent.md` | Convert designs into responsive, accessible components |
+| `ui-component-writer` | `.claude/agents/ui-component-writer.md` | Convert designs into responsive, accessible components |
 | `wiki-agent` | `.claude/agents/wiki-agent.md` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
 | `requirement-parser` | `.claude/agents/requirement-parser.md` | Parse REQUEST.md into structured requirements, complexity, and clarifying questions |
 | `product-manager` | `.claude/agents/product-manager.md` | Feature viability — user value, alignment, constitution compliance; Build/Defer/Decline |
-| `ux-designer` | `.claude/agents/ux-designer.md` | User journeys, component inventory, interaction states for RPI features |
+| `ux-planner` | `.claude/agents/ux-planner.md` | User journeys, component inventory, interaction states for RPI features |
 | `senior-software-engineer` | `.claude/agents/senior-software-engineer.md` | Feasibility + phased implementation (research and code execution) |
 | `technical-cto-advisor` | `.claude/agents/technical-cto-advisor.md` | GO / CONDITIONAL GO / DEFER / NO-GO with confidence score |
 | `constitutional-validator` | `.claude/agents/constitutional-validator.md` | Mission alignment, human oversight, data privacy, reversibility checks |
@@ -80,7 +80,7 @@ For non-trivial features, use the structured Research → Plan → Implement wor
 Step 1: write rpi/{slug}/REQUEST.md          ← plain-language feature description
 Step 2: /project:rpi:research {slug}         ← 6-agent GO/NO-GO gate → rpi/{slug}/research/RESEARCH.md
 Step 3: /project:rpi:plan {slug}             ← pm.md, ux.md, eng.md, PLAN.md → rpi/{slug}/plan/
-Step 4: /project:rpi:implement {slug}        ← phased implementation + gates → rpi/{slug}/IMPLEMENT.md
+Step 4: /project:rpi:implement {slug}        ← phased implementation + gates → rpi/{slug}/implement/IMPLEMENT.md
 ```
 
 Feature folder structure:
@@ -94,7 +94,8 @@ rpi/{slug}/
     ux.md             ← UX flows and component specs
     eng.md            ← architecture and data model
     PLAN.md           ← phased implementation plan with gates
-  IMPLEMENT.md        ← phase log and final status
+  implement/
+    IMPLEMENT.md      ← phase log and final status
 ```
 
 ---
