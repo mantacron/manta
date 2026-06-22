@@ -22,6 +22,10 @@ Then open Claude Code:
 ```
 /project:init         ← start here for new projects
      ↓
+/project:rpi:research "feature"  ← 6-agent GO/NO-GO gate → RESEARCH.md
+/project:rpi:plan "feature"      ← UX + engineering plan → PLAN.md
+/project:rpi:implement "feature" ← phased code with gates
+     ↓  (or skip RPI for simple changes:)
 /project:scaffold "feature"   ← generate code skeleton (boilerplate, TODOs to fill)
 /project:write "feature"      ← generate complete implementation (no TODOs, enterprise patterns)
 /project:ui [design]          ← convert design files into components
@@ -58,6 +62,50 @@ PR opened → PR summary generated automatically
 | `blueprint-agent` | `.claude/agents/blueprint-agent.md` | Stack detection, API inventory, ER diagram, module map |
 | `ui-ux-agent` | `.claude/agents/ui-ux-agent.md` | Convert designs into responsive, accessible components |
 | `wiki-agent` | `.claude/agents/wiki-agent.md` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `requirement-parser` | `.claude/agents/requirement-parser.md` | Parse REQUEST.md into structured requirements, complexity, and clarifying questions |
+| `product-manager` | `.claude/agents/product-manager.md` | Feature viability — user value, alignment, constitution compliance; Build/Defer/Decline |
+| `ux-designer` | `.claude/agents/ux-designer.md` | User journeys, component inventory, interaction states for RPI features |
+| `senior-software-engineer` | `.claude/agents/senior-software-engineer.md` | Feasibility + phased implementation (research and code execution) |
+| `technical-cto-advisor` | `.claude/agents/technical-cto-advisor.md` | GO / CONDITIONAL GO / DEFER / NO-GO with confidence score |
+| `constitutional-validator` | `.claude/agents/constitutional-validator.md` | Mission alignment, human oversight, data privacy, reversibility checks |
+| `documentation-analyst-writer` | `.claude/agents/documentation-analyst-writer.md` | Writes RESEARCH.md, pm.md, ux.md, eng.md, PLAN.md, IMPLEMENT.md |
+
+---
+
+## RPI Workflow
+
+For non-trivial features, use the structured Research → Plan → Implement workflow before writing any code:
+
+```
+Step 1: write rpi/{slug}/REQUEST.md          ← plain-language feature description
+Step 2: /project:rpi:research {slug}         ← 6-agent GO/NO-GO gate → rpi/{slug}/research/RESEARCH.md
+Step 3: /project:rpi:plan {slug}             ← pm.md, ux.md, eng.md, PLAN.md → rpi/{slug}/plan/
+Step 4: /project:rpi:implement {slug}        ← phased implementation + gates → rpi/{slug}/IMPLEMENT.md
+```
+
+Feature folder structure:
+```
+rpi/{slug}/
+  REQUEST.md          ← your feature description
+  research/
+    RESEARCH.md       ← synthesized GO/NO-GO report
+  plan/
+    pm.md             ← product requirements
+    ux.md             ← UX flows and component specs
+    eng.md            ← architecture and data model
+    PLAN.md           ← phased implementation plan with gates
+  IMPLEMENT.md        ← phase log and final status
+```
+
+---
+
+## Agent-Scoped Memory
+
+Agents that benefit from persistent state across sessions write to `.claude/agent-memory/{agent}/MEMORY.md`. Currently:
+
+- `wiki-agent/MEMORY.md` — tracks detected stack, routes, screenshot status, spec gaps, and answered clarifying questions
+
+Agents read this at startup and update it after each run. Add new agents by creating `.claude/agent-memory/{agent-name}/MEMORY.md` with the fields the agent needs to persist.
 
 ---
 
@@ -83,6 +131,9 @@ PR opened → PR summary generated automatically
 | `/project:ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |
 | `/project:capture-patterns` | Scan codebase and auto-generate `PATTERNS.md` + `manta.patterns.json` |
 | `/project:wiki [--url=URL]` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `/project:rpi:research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
+| `/project:rpi:plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
+| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
 
 ---
 

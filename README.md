@@ -7,13 +7,13 @@
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                               M A N T A                                       ║
-║                  12-agent · 18-command AI pipeline · free                     ║
+║                  19-agent · 21-command AI pipeline · free                     ║
 ║                                                                               ║
 ║         Every commit reviewed.  Every secret caught.  Free forever.           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**12 agents. 18 commands. 2 git hooks. Works on new projects and existing codebases.**
+**19 agents. 21 commands. 2 git hooks. Works on new projects and existing codebases.**
 
 > Works with **[Claude Code](https://claude.ai/code)**, **[OpenAI Codex](https://github.com/openai/codex)**, **[Google Gemini CLI](https://github.com/google-gemini/gemini-cli)**, and **[GitHub Copilot](https://github.com/features/copilot)**. Git hooks auto-detect whichever CLI is installed.
 
@@ -122,10 +122,28 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `/project:update-docs` | Keep README and CHANGELOG in sync with recent changes |
 | `/project:capture-patterns` | Auto-detect your team's coding conventions, write to `PATTERNS.md` |
 | `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `/project:rpi:research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
+| `/project:rpi:plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
+| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
 
 ---
 
-## All 12 Agents
+## RPI Workflow (Research → Plan → Implement)
+
+Instead of writing code immediately, run the 4-step structured workflow for any non-trivial feature:
+
+```
+Step 1 — Write rpi/{slug}/REQUEST.md     ← describe the feature in plain language
+Step 2 — /project:rpi:research {slug}   ← 6 agents evaluate feasibility → GO/NO-GO
+Step 3 — /project:rpi:plan {slug}       ← UX + engineering plan + risk assessment
+Step 4 — /project:rpi:implement {slug}  ← phased code with gates, never all at once
+```
+
+**Why:** Spending 5 minutes on research + planning catches scope problems, tech debt, and constitutional violations before a line of code is written. The GO/NO-GO gate (technical-cto-advisor) won't let you proceed if the cost outweighs the value.
+
+---
+
+## All 19 Agents
 
 | Agent | Purpose |
 |-------|---------|
@@ -141,6 +159,13 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 | `blueprint-agent` | Stack detection, API inventory, ER diagram, module map, component tree |
 | `ui-ux-agent` | Converts design files into responsive, accessible, DRY-compliant components |
 | `wiki-agent` | Generates product wiki in `docs/wiki/` — route/screen discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `requirement-parser` | Parses `rpi/{slug}/REQUEST.md` into structured requirements, complexity estimate, and clarifying questions |
+| `product-manager` | Evaluates feature viability — user value, strategic fit, constitution compliance; recommends Build / Defer / Decline |
+| `ux-designer` | Designs user journeys, component inventory, interaction states, and accessibility notes for RPI features |
+| `senior-software-engineer` | Technical feasibility assessment + phased implementation (dual role: research + code execution) |
+| `technical-cto-advisor` | Final GO / CONDITIONAL GO / DEFER / NO-GO decision with confidence score and rationale |
+| `constitutional-validator` | Validates features against CONSTITUTION.md — mission alignment, human oversight, data privacy, reversibility |
+| `documentation-analyst-writer` | Synthesizes agent outputs into RESEARCH.md, pm.md, ux.md, eng.md, PLAN.md, and IMPLEMENT.md |
 
 ---
 

@@ -1,5 +1,31 @@
 {
   "permissions": {
+    "ask": [
+      "Bash(rm *)",
+      "Bash(rmdir *)",
+      "Bash(shred *)",
+      "Bash(unlink *)",
+      "Bash(dd *)",
+      "Bash(kill *)",
+      "Bash(killall *)",
+      "Bash(pkill *)",
+      "Bash(npm install*)",
+      "Bash(npm uninstall*)",
+      "Bash(npm publish*)",
+      "Bash(pip install*)",
+      "Bash(pip3 install*)",
+      "Bash(yarn add*)",
+      "Bash(yarn remove*)",
+      "Bash(pnpm add*)",
+      "Bash(pnpm remove*)",
+      "Bash(docker *)",
+      "Bash(kubectl *)",
+      "Bash(firebase *)",
+      "Bash(gcloud *)",
+      "Bash(wget *)",
+      "Bash(chmod 777*)",
+      "Bash(chown *)"
+    ],
     "allow": [
       "Bash(git diff*)",
       "Bash(git log*)",
@@ -85,6 +111,7 @@
     "CLAUDE_REVIEW_BLOCK_ON_CRITICAL": "true",
     "CLAUDE_REVIEW_AGENTS": "security-sentinel,code-quality,perf-analyzer,db-migration-guardian",
     "CLAUDE_PUSH_REVIEW_AGENTS": "security-sentinel,code-quality,perf-analyzer,db-migration-guardian",
-    "CLAUDE_DOCS_AUTO_UPDATE": "ask"
+    "CLAUDE_DOCS_AUTO_UPDATE": "ask",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "80"
   }
 }
