@@ -14,10 +14,10 @@ You turn research and planning outputs into clean, structured markdown artifacts
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` != `CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT` != `MANTA_DIR`, prefix all project paths with `../`.
 
 ## Artifacts You Produce
 
@@ -119,8 +119,8 @@ Path: `rpi/{feature-slug}/research/RESEARCH.md`
 
 ## Next Steps
 
-{If GO}: Proceed to `/project:rpi:plan {feature-slug}`
-{If CONDITIONAL GO}: Address conditions, then `/project:rpi:plan {feature-slug}`
+{If GO}: Proceed to `/rpi-plan {feature-slug}`
+{If CONDITIONAL GO}: Address conditions, then `/rpi-plan {feature-slug}`
 {If DEFER}: Revisit when: {specific trigger}
 {If NO-GO}: {alternatives considered}
 ```

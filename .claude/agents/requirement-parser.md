@@ -1,6 +1,6 @@
 ---
 name: requirement-parser
-description: Analyzes a feature REQUEST.md and extracts structured requirements, goals, constraints, complexity estimate, and clarifying questions for downstream RPI planning agents. Invoked by /project:rpi:research.
+description: Analyzes a feature REQUEST.md and extracts structured requirements, goals, constraints, complexity estimate, and clarifying questions for downstream RPI planning agents. Invoked by /rpi-research.
 model: sonnet
 tools: Read, Bash, Glob
 color: blue
@@ -14,10 +14,10 @@ You extract structured, actionable requirements from unstructured feature descri
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` != `CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT` != `MANTA_DIR`, prefix all project paths with `../`.
 
 ## What You Do
 

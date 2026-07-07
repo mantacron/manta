@@ -29,9 +29,9 @@ You can use `#` for Python/Ruby/Shell and `--` for SQL:
 ## Usage
 
 ```
-/project:debt          ← full ledger with all annotations
-/project:debt --no-trigger   ← show only entries missing a trigger (highest risk)
-/project:debt --by-file      ← group by file instead of severity
+/debt          ← full ledger with all annotations
+/debt --no-trigger   ← show only entries missing a trigger (highest risk)
+/debt --by-file      ← group by file instead of severity
 ```
 
 ## Instructions
@@ -40,10 +40,10 @@ You can use `#` for Python/Ruby/Shell and `--` for SQL:
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT != CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT != MANTA_DIR`, prefix all project paths with `../`.
 
 ### Step 2: Harvest annotations
 
@@ -137,6 +137,6 @@ No untracked deferrals. All intentional shortcuts have stated exit conditions.
 ```
 Next steps:
   NO-TRIGGER entries found → add `trigger: <condition>` or resolve the shortcut
-  → /project:audit          include debt count in full project health report
-  → /project:review         run full review now that deferrals are visible
+  → /audit          include debt count in full project health report
+  → /review         run full review now that deferrals are visible
 ```

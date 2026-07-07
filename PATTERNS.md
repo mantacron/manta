@@ -7,7 +7,7 @@
 > - `code-quality` agent at pre-commit — violations become WARNING findings
 > - `scaffolding-agent` — generates code that matches these patterns automatically
 >
-> Run `/project:capture-patterns` to auto-populate this file from your existing codebase.
+> Run `/capture-patterns` to auto-populate this file from your existing codebase.
 > Commit this file alongside your source code so the whole team enforces the same conventions.
 
 ---

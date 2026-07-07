@@ -1,6 +1,6 @@
 ---
 name: constitutional-validator
-description: Validates features, technical decisions, and code changes against the project's CONSTITUTION.md principles — ethics, AI safety, human oversight, scope alignment, and architectural commitments. Runs in the RPI implement phase and standalone via /project:rpi:implement.
+description: Validates features, technical decisions, and code changes against the project's CONSTITUTION.md principles — ethics, AI safety, human oversight, scope alignment, and architectural commitments. Runs in the RPI implement phase and standalone via /rpi-implement.
 model: opus
 tools: Read, Bash, Glob, Grep
 color: purple
@@ -16,10 +16,10 @@ This is especially critical for AI-powered features: bias, unintended autonomy, 
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` != `CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT` != `MANTA_DIR`, prefix all project paths with `../`.
 
 ## Scan Exclusions
 

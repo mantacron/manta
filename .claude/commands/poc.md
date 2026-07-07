@@ -8,7 +8,7 @@ Three questions → project skeleton → start coding in under 5 minutes.
 
 ## What This Does
 
-`/project:poc` is a stripped-down init for projects where the goal is to move fast
+`/poc` is a stripped-down init for projects where the goal is to move fast
 and validate an idea — not ship production software yet.
 
 It generates the minimum needed to start coding with the review pipeline active:
@@ -19,15 +19,15 @@ It generates the minimum needed to start coding with the review pipeline active:
 - Minimal directory structure
 - Git hooks (pre-commit still runs — quality still matters)
 
-Everything skipped that full `/project:init` does:
+Everything skipped that full `/init` does:
 - Phase-by-phase interview
 - `ARCHITECTURE.md` (skip)
 - `RISKS.md` (skip)
 - `CONSTITUTION.md` (skip)
-- Pattern configuration (skip — add later with `/project:capture-patterns`)
+- Pattern configuration (skip — add later with `/capture-patterns`)
 - CI/CD template (skip)
 
-When your POC graduates to production: run `/project:init` — it detects the existing spec
+When your POC graduates to production: run `/init` — it detects the existing spec
 and offers a targeted update session rather than starting over.
 
 ---
@@ -82,7 +82,7 @@ Four sections only:
 ```markdown
 # [Project Name] — POC Spec
 
-> **Status: POC** — This is a proof of concept. Run `/project:init` to promote to a full spec.
+> **Status: POC** — This is a proof of concept. Run `/init` to promote to a full spec.
 > Generated: [date]
 
 ## 1. Overview
@@ -250,10 +250,10 @@ Stack:     [stack]
 Spec:      spec/SPEC.md  (4-section POC spec)
 Hooks:     pre-commit active — agents review every commit
 
-Start coding. Run /project:write "[feature]" to generate your first endpoint.
+Start coding. Run /write "[feature]" to generate your first endpoint.
 
 When this POC is ready to become a real project:
-  → /project:init   (detects existing spec, runs targeted update session)
+  → /init   (detects existing spec, runs targeted update session)
 ────────────────────────────────────────────────────────────────────────
 ```
 
@@ -262,8 +262,8 @@ When this POC is ready to become a real project:
 ## Rules
 
 - **Ask exactly three questions, once** — do not extend the interview
-- **Do not generate ARCHITECTURE.md, RISKS.md, or CONSTITUTION.md** — these come with `/project:init`
+- **Do not generate ARCHITECTURE.md, RISKS.md, or CONSTITUTION.md** — these come with `/init`
 - **Do not ask for per-file confirmation** — write all files, then show the summary
 - **Do not suggest CI/CD** — out of scope for POC init
-- **Do not run `/project:capture-patterns`** — nothing to scan yet
+- **Do not run `/capture-patterns`** — nothing to scan yet
 - **Speed is the feature** — if something is unclear, make a reasonable default and note it in the output

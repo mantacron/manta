@@ -1,5 +1,5 @@
 {
-  "_comment": "Manta pattern configuration. Values here override PATTERNS.md. Set any field to null to leave it unset (agents will infer). Run /project:capture-patterns to auto-populate from your codebase.",
+  "_comment": "Manta pattern configuration. Values here override PATTERNS.md. Set any field to null to leave it unset (agents will infer). Run /capture-patterns to auto-populate from your codebase.",
 
   "naming": {
     "source_files": null,

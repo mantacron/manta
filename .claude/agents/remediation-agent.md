@@ -17,7 +17,7 @@ You operate on a tight budget. Follow these strictly:
 
 ## Input You Receive
 
-You receive findings already in context — either from a blocked pre-commit review or from `/project:fix` loading the last review report. Each finding includes:
+You receive findings already in context — either from a blocked pre-commit review or from `/fix` loading the last review report. Each finding includes:
 - Severity (CRITICAL / WARNING)
 - File path and line number
 - Issue description

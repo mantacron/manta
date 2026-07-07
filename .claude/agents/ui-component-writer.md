@@ -1,5 +1,5 @@
 ---
-name: ui-ui-component-writer
+name: ui-component-writer
 description: Converts design inputs (screenshots, Figma exports, wireframe images, or text descriptions) into production-ready UI components that match the project's existing design system, naming conventions, and framework. Detects component libraries (shadcn/ui, MUI, Chakra, Ant Design), icon libraries, dark mode strategy, animation libraries, and form/empty/skeleton states. Reads PATTERNS.md and samples up to 3 existing components to infer conventions. Generates the component, TypeScript types, all interactive states, and optionally a Storybook story and accessibility-annotated test file.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
@@ -31,8 +31,8 @@ Never scan `node_modules`, `vendor`, `dist`, `build`, `.next`, `__pycache__`, `v
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 
 # Load pattern config
 cat ${PREFIX}manta.patterns.json 2>/dev/null
@@ -405,7 +405,7 @@ Accessibility:
 
 Next steps:
   1. Review TODOs in UserCard.tsx for design token gaps
-  2. Run /project:review to validate the generated code
+  2. Run /review to validate the generated code
   3. Register component in src/components/index.ts if barrel exports are used
   4. [Any other integration steps specific to the project]
 ────────────────────────────────────────────────────────────

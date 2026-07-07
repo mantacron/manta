@@ -2,7 +2,7 @@
 
 Automated code review on every commit. Security scanning, code quality, performance analysis — all in your git workflow.
 
-> **Codex CLI users**: The `/project:` slash commands in this repo are Claude Code native. Use `codex` naturally — describe what you want to do (e.g. "review my staged changes for security issues") and the system will guide you.
+> **Codex CLI users**: The `/` slash commands in this repo are Claude Code native. Use `codex` naturally — describe what you want to do (e.g. "review my staged changes for security issues") and the system will guide you.
 
 ---
 

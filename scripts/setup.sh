@@ -59,7 +59,7 @@ AI_FOUND=false
 
 if command -v claude &>/dev/null; then
   CLAUDE_VERSION=$(claude --version 2>/dev/null || echo "unknown")
-  log_ok "Claude Code found: $CLAUDE_VERSION (primary — full /project: command support)"
+  log_ok "Claude Code found: $CLAUDE_VERSION (primary — full / command support)"
   AI_FOUND=true
 fi
 
@@ -80,7 +80,7 @@ if [[ "$AI_FOUND" == "false" ]]; then
   log_info "Install Claude Code (recommended): npm install -g @anthropic-ai/claude-code"
   log_info "Or Codex CLI: npm install -g @openai/codex"
   log_info "Or Gemini CLI: npm install -g @google/gemini-cli"
-  log_info "Note: /project: slash commands require Claude Code"
+  log_info "Note: / slash commands require Claude Code"
 fi
 
 # ─── Step 4: Detect tech stack and check tools ────────────────────────────────
@@ -150,7 +150,7 @@ if command -v gh &>/dev/null; then
   log_ok "gh CLI found: $(gh --version | head -1)"
   gh auth status &>/dev/null 2>&1 \
     && log_ok "  gh authenticated" \
-    || { log_warn "  gh not authenticated — run: gh auth login"; log_info "  Needed for: /project:pr-sync"; }
+    || { log_warn "  gh not authenticated — run: gh auth login"; log_info "  Needed for: /pr-sync"; }
 else
   log_info "gh CLI not found — PR auto-posting won't work (manual copy-paste still works)"
   log_info "Install: https://cli.github.com"
@@ -180,7 +180,7 @@ if [[ -f ".gitignore" ]]; then
     log_ok ".env added to .gitignore"
   }
 else
-  log_warn "No .gitignore found — run /project:init to generate one"
+  log_warn "No .gitignore found — run /init to generate one"
 fi
 
 # ─── Step 7: Verify hook configuration ────────────────────────────────────────
@@ -214,7 +214,7 @@ fi
 echo ""
 echo -e "${BOLD}Next steps:${RESET}"
 echo -e "  1. Open Claude Code in your project: ${CYAN}claude${RESET}"
-echo -e "  2. Run ${CYAN}/project:init${RESET} to finish setup"
+echo -e "  2. Run ${CYAN}/init${RESET} to finish setup"
 echo -e "  3. Start coding — agents review on every ${CYAN}git commit${RESET}"
 echo ""
 echo -e "${BOLD}Bypass hooks when needed:${RESET}"

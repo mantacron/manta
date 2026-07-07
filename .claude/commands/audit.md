@@ -311,9 +311,9 @@ If yes: invoke the **remediation-agent** with the CRITICAL findings as input. Ou
 
 ## Focus Flags
 
-- `/project:audit security`     — run only `security-sentinel`
-- `/project:audit quality`      — run only `code-quality`
-- `/project:audit performance`  — run only `perf-analyzer`
+- `/audit security`     — run only `security-sentinel`
+- `/audit quality`      — run only `code-quality`
+- `/audit performance`  — run only `perf-analyzer`
 
 Focused reports use the same format but populate only the relevant section.
 Filename: `reports/YYYY-MM-DD-[focus]-audit.md`

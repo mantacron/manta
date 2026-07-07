@@ -1,4 +1,4 @@
-# /project:blueprint — Project Blueprint Generator
+# /blueprint — Project Blueprint Generator
 
 **Begin by outputting:** `[ Manta Enterprise — Blueprint ]`
 
@@ -33,7 +33,7 @@ echo "CODE_EXISTS=$CODE_EXISTS SPEC_EXISTS=$SPEC_EXISTS"
 Determine mode:
 - `CODE_EXISTS=true` → **mode: existing**
 - `CODE_EXISTS=false`, `SPEC_EXISTS=true` → **mode: spec**
-- Neither → stop and say: "No code or filled spec found. Run `/project:init` to set up the project first."
+- Neither → stop and say: "No code or filled spec found. Run `/init` to set up the project first."
 
 ---
 
@@ -98,4 +98,4 @@ Blueprint generated: docs/BLUEPRINT.md
 Then:
 > "Open `docs/BLUEPRINT.md` to view the full blueprint. Diagrams render in GitHub, VS Code (Markdown Preview), and any Mermaid-compatible viewer.
 >
-> Re-run `/project:blueprint` anytime to refresh — it overwrites the previous version."
+> Re-run `/blueprint` anytime to refresh — it overwrites the previous version."

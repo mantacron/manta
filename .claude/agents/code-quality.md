@@ -34,8 +34,8 @@ Before reviewing anything else, detect subdirectory mode and load project conven
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 
 # JSON config takes precedence over PATTERNS.md
 cat ${PREFIX}manta.patterns.json 2>/dev/null

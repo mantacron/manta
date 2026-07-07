@@ -5,10 +5,10 @@ Generate consistent boilerplate for a new feature, matching the project's existi
 ## Usage
 
 ```
-/project:scaffold "add a user notifications endpoint"
-/project:scaffold "create a password reset flow"
-/project:scaffold "add a background job that sends weekly digest emails"
-/project:scaffold "add a rate limiting middleware"
+/scaffold "add a user notifications endpoint"
+/scaffold "create a password reset flow"
+/scaffold "add a background job that sends weekly digest emails"
+/scaffold "add a rate limiting middleware"
 ```
 
 ## Instructions
@@ -46,7 +46,7 @@ After scaffolding, the agent will list:
 
 After scaffold completes, run a review on the generated files:
 ```
-/project:review
+/review
 ```
 Or stage and commit to trigger the pre-commit review automatically.
 

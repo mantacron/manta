@@ -14,8 +14,8 @@ Before doing anything, detect whether manta is installed as a subfolder of the t
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 ```
 
 Apply `${PREFIX}` to all project file paths — `${PREFIX}README.md`, `${PREFIX}CHANGELOG.md`, `${PREFIX}spec/SPEC.md`, etc.

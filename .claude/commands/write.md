@@ -4,18 +4,18 @@ Write a complete production-ready implementation — enterprise defaults (rate l
 
 ## What This Is
 
-`/project:write` goes further than `/project:scaffold`. Scaffold generates a skeleton — you fill in the business logic. Write generates the full implementation: complete controllers, services, repositories, validation, error handling, rate limiting, auth wiring, pagination, tests — ready to ship.
+`/write` goes further than `/scaffold`. Scaffold generates a skeleton — you fill in the business logic. Write generates the full implementation: complete controllers, services, repositories, validation, error handling, rate limiting, auth wiring, pagination, tests — ready to ship.
 
 Use `scaffold` when you want to mirror the team's boilerplate. Use `write` when you want production-ready code with enterprise defaults applied.
 
 ## Usage
 
 ```
-/project:write "add a user notifications endpoint with read/unread tracking"
-/project:write "create a password reset flow with token expiry and rate limiting"
-/project:write "add a POST /payments endpoint with idempotency and audit logging"
-/project:write "add a background job that processes queued email sends with retry"
-/project:write "add a GET /admin/users endpoint with role-based access and pagination"
+/write "add a user notifications endpoint with read/unread tracking"
+/write "create a password reset flow with token expiry and rate limiting"
+/write "add a POST /payments endpoint with idempotency and audit logging"
+/write "add a background job that processes queued email sends with retry"
+/write "add a GET /admin/users endpoint with role-based access and pagination"
 ```
 
 ## Instructions
@@ -45,7 +45,7 @@ The agent will:
 
 After the agent writes the code, run a review to validate it:
 ```
-/project:review
+/review
 ```
 
 Or stage and commit to trigger the pre-commit hook automatically.
@@ -73,6 +73,6 @@ The code-writer applies these patterns unless the project already has them (in w
 ## What Write Is NOT
 
 - Not a spec replacement — if the feature isn't in `spec/SPEC.md`, the agent flags it as a deviation
-- Not a one-shot deploy button — run `/project:review` after writing
+- Not a one-shot deploy button — run `/review` after writing
 - Not a magic wand — complex domain logic still needs your input on the business rules
 - Not overwriting existing files — if a file already exists, the agent will ask what to do

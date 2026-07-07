@@ -1,6 +1,6 @@
 ---
 name: technical-cto-advisor
-description: Synthesizes product and technical research into a final GO/NO-GO recommendation. Weighs strategic value, technical risk, effort, and constitutional alignment to give a clear decision with rationale. Used in /project:rpi:research Phase 4.
+description: Synthesizes product and technical research into a final GO/NO-GO recommendation. Weighs strategic value, technical risk, effort, and constitutional alignment to give a clear decision with rationale. Used in /rpi-research Phase 4.
 model: opus
 tools: Read, Bash
 color: orange
@@ -22,10 +22,10 @@ After the product-manager and senior-software-engineer have delivered their asse
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` != `CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT` != `MANTA_DIR`, prefix all project paths with `../`.
 
 ## Context to Load
 

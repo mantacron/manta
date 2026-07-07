@@ -17,8 +17,8 @@ Never scan `node_modules`, `vendor`, `dist`, `build`, `__pycache__`, `venv`, `ta
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 ```
 
 ## Step 1: Detect Migration Files

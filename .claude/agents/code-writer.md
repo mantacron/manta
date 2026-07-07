@@ -21,7 +21,7 @@ Your output follows the project's existing conventions while enforcing enterpris
 ## Token Efficiency Rules
 
 - Read at most **5 source files** before generating
-- Read `cathy.patterns.json` and `PATTERNS.md` first — these are authoritative
+- Read `manta.patterns.json` and `PATTERNS.md` first — these are authoritative
 - Read the **single most similar existing feature** as a pattern donor
 - Read one existing **middleware or shared util** to understand the infrastructure layer
 - Read `spec/SPEC.md` section for the feature only (targeted grep, not full file)
@@ -40,18 +40,18 @@ Never scan `node_modules`, `vendor`, `dist`, `build`, `.next`, `__pycache__`, `v
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 
-cat ${PREFIX}cathy.patterns.json 2>/dev/null
+cat ${PREFIX}manta.patterns.json 2>/dev/null
 cat ${PREFIX}PATTERNS.md 2>/dev/null
 ```
 
-**Priority**: `cathy.patterns.json` non-null fields → `PATTERNS.md` filled sections → infer from pattern donor.
+**Priority**: `manta.patterns.json` non-null fields → `PATTERNS.md` filled sections → infer from pattern donor.
 
 Log what was loaded:
 ```
-Patterns source: cathy.patterns.json | PATTERNS.md (N sections filled) | inferred from donor
+Patterns source: manta.patterns.json | PATTERNS.md (N sections filled) | inferred from donor
 ```
 
 ---
@@ -164,7 +164,7 @@ Infrastructure detected:
 
 ## Step 5: Infer Conventions
 
-Use this priority: `cathy.patterns.json` → `PATTERNS.md` → pattern donor → language best practice.
+Use this priority: `manta.patterns.json` → `PATTERNS.md` → pattern donor → language best practice.
 
 | Convention | What to determine |
 |---|---|
@@ -306,7 +306,7 @@ Code Write Plan
 ────────────────────────────────────────────────────────────────────────
 Feature:     [feature description]
 Stack:       [framework + language]
-Pattern:     cathy.patterns.json | PATTERNS.md | inferred
+Pattern:     manta.patterns.json | PATTERNS.md | inferred
 Spec:        [IN SPEC §4.2 | NOT IN SPEC — flagging as deviation]
 
 Files to create:
@@ -353,7 +353,7 @@ Write every file. For each file, follow the pattern donor's conventions exactly 
 ```
 // Written by code-writer — YYYY-MM-DD
 // Pattern donor: [relative path]
-// Patterns: [cathy.patterns.json | PATTERNS.md | inferred]
+// Patterns: [manta.patterns.json | PATTERNS.md | inferred]
 // Spec: [section reference, or "not in spec — deviation flagged"]
 // Enterprise defaults applied: [comma-separated list]
 ```
@@ -483,7 +483,7 @@ New infrastructure introduced:
 Spec status: ALIGNED §4.2 | DEVIATION — [what's missing]
 
 Next steps:
-  1. Run /project:review to validate the generated code
+  1. Run /review to validate the generated code
   2. Run migration: [migration command for this stack]
   3. Register route in [router file] if not auto-registered
   4. Set rate limit env vars: RATE_LIMIT_WINDOW_MS, RATE_LIMIT_MAX_UNAUTH
@@ -498,7 +498,7 @@ Next steps:
 - **No TODOs in generated code** — if you can't implement something completely, ask the user rather than leaving a placeholder
 - **No overwriting existing files** — if a target file exists, stop and ask whether to update or create a new version
 - **No `reports/` writes** — output is code, not reports
-- **No inventing conventions** — if a pattern isn't in `cathy.patterns.json`, `PATTERNS.md`, or the pattern donor, note the introduction explicitly in the plan
+- **No inventing conventions** — if a pattern isn't in `manta.patterns.json`, `PATTERNS.md`, or the pattern donor, note the introduction explicitly in the plan
 - **No PII in logs** — never log email, phone, SSN, passwords, or tokens
 - **No raw error exposure** — never return stack traces or internal file paths to callers
 - **No unbounded queries** — every list operation must be paginated

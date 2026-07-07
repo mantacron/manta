@@ -127,6 +127,6 @@ BLOCK_REASON: [N warnings found — see above]
 - TIMEOUT agents are noted but do not block the commit
 - The last two lines must always be `COMMIT_VERDICT: PASS`, `COMMIT_VERDICT: BLOCK`, or `COMMIT_VERDICT: WARN` followed by `BLOCK_REASON`
 - Do not ask questions — this is non-interactive
-- Do not offer test generation — that's for the interactive `/project:review` command
+- Do not offer test generation — that's for the interactive `/review` command
 - Before reporting any finding, check `.mantaignore` if it exists — suppress any finding matching a rule in that file
 - Use the project map to prioritize high_risk_files for deeper review

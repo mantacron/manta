@@ -185,7 +185,7 @@ if echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: BLOCK"; then
   echo -e "${RED}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Fix the critical issues above, then commit again.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/fix${RESET}) or ask your AI assistant"
   echo ""
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_REVIEW=1 git commit${RESET}"
   echo ""
@@ -202,7 +202,7 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: WARN"; then
   echo -e "${YELLOW}${BOLD}$WARN_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Warnings above should be addressed before pushing.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/fix${RESET}) or ask your AI assistant"
   echo -e "${YELLOW}Note:${RESET} Warnings ${BOLD}will block${RESET} the pre-push review."
   echo ""
   exit 0
@@ -215,6 +215,6 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: PASS"; then
 else
   # No clear verdict found — allow commit but warn
   echo -e "${YELLOW}[manta]${RESET} Could not parse review verdict — allowing commit"
-  echo "         Run /project:review in Claude Code for a full interactive review"
+  echo "         Run /review in Claude Code for a full interactive review"
   exit 0
 fi

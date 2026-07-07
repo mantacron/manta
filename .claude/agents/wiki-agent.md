@@ -16,10 +16,10 @@ Before any file operations, detect whether Manta Enterprise is installed as a su
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` differs from `CATHY_DIR`, you are in **subdirectory mode**. Prefix all project file paths with `../`. Paths starting with `.claude/` or `scripts/` are internal — do not prefix them.
+If `GIT_ROOT` differs from `MANTA_DIR`, you are in **subdirectory mode**. Prefix all project file paths with `../`. Paths starting with `.claude/` or `scripts/` are internal — do not prefix them.
 
 ---
 
@@ -350,7 +350,7 @@ docs/wiki/
 ## Spec Comparison
 
 [If spec exists] → [spec-comparison.md](spec-comparison.md)  
-[If not] *No spec found. Run `/project:init` to create one.*
+[If not] *No spec found. Run `/init` to create one.*
 ```
 
 ### `docs/wiki/pages/[slug].md`
@@ -368,7 +368,7 @@ For each route/screen:
 ![Screenshot](../screenshots/[slug].png)
 
 [If no screenshot:]
-> Screenshot not available — run the app and re-run `/project:wiki` to capture it.
+> Screenshot not available — run the app and re-run `/wiki` to capture it.
 
 ## What This Page Does
 
@@ -450,6 +450,6 @@ Wiki generated → docs/wiki/
     docs/wiki/pages/[list]
     [docs/wiki/spec-comparison.md]
 
-To capture screenshots: start your app, then re-run /project:wiki
-To update spec:         edit spec/SPEC.md, then re-run /project:wiki
+To capture screenshots: start your app, then re-run /wiki
+To update spec:         edit spec/SPEC.md, then re-run /wiki
 ```

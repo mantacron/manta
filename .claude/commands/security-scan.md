@@ -104,7 +104,7 @@ Tell the user:
 
 ```
 Next steps:
-  CLEAN             → /project:audit             include in full health report
-  NEEDS_ATTENTION   → /project:fix               get fix suggestions for flagged files
+  CLEAN             → /audit             include in full health report
+  NEEDS_ATTENTION   → /fix               get fix suggestions for flagged files
   CRITICAL_ISSUES   → address immediately before any commits or releases
 ```

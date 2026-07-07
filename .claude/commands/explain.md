@@ -5,10 +5,10 @@ Get a plain-language explanation of what a file, function, module, or concept do
 ## Usage
 
 ```
-/project:explain src/auth/jwt.ts
-/project:explain "how does the payment flow work?"
-/project:explain UserService
-/project:explain src/modules/billing/
+/explain src/auth/jwt.ts
+/explain "how does the payment flow work?"
+/explain UserService
+/explain src/modules/billing/
 ```
 
 ## Instructions

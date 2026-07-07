@@ -29,8 +29,8 @@ Before finding a pattern donor, check if the project has documented its conventi
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 
 # Prefer JSON config (machine-readable, precise)
 cat ${PREFIX}manta.patterns.json 2>/dev/null
@@ -166,7 +166,7 @@ Files created: [N]
 
 Spec status: [ALIGNED | DEVIATION — [what's missing from spec]]
 Next steps:
-1. Run /project:review to validate the generated code
+1. Run /review to validate the generated code
 2. [Any migration steps if DB changes were made]
 3. [Any registration needed — e.g. "add route to router.ts:42"]
 ```

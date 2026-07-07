@@ -166,7 +166,7 @@ if echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: BLOCK"; then
   echo -e "${RED}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Fix the critical issues above, then push again.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/fix${RESET}) or ask your AI assistant"
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_PUSH_REVIEW=1 git push${RESET}"
   echo ""
   exit 1
@@ -182,7 +182,7 @@ elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: WARN"; then
   echo -e "${YELLOW}${BOLD}$BLOCK_REASON${RESET}"
   echo ""
   echo -e "${YELLOW}Warnings must be resolved before pushing.${RESET}"
-  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/project:fix${RESET}) or ask your AI assistant"
+  echo -e "${CYAN}Get AI fix suggestions:${RESET} open Claude Code (${BOLD}/fix${RESET}) or ask your AI assistant"
   echo -e "To bypass (emergency only): ${BOLD}SKIP_CLAUDE_PUSH_REVIEW=1 git push${RESET}"
   echo ""
   exit 1

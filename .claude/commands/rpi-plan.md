@@ -1,5 +1,5 @@
 ---
-name: rpi:plan
+name: rpi-plan
 description: RPI Step 3 — Generate comprehensive planning documentation for a feature that received a GO. Produces pm.md (product requirements), ux.md (UX design), eng.md (engineering spec), and PLAN.md (phased implementation roadmap).
 argument-hint: "<feature-slug>"
 ---
@@ -35,7 +35,7 @@ echo "Planning feature: $FEATURE_SLUG"
 
 if [ ! -f "rpi/$FEATURE_SLUG/research/RESEARCH.md" ]; then
   echo "ERROR: Research report not found at rpi/$FEATURE_SLUG/research/RESEARCH.md"
-  echo "Run /project:rpi:research $FEATURE_SLUG first."
+  echo "Run /rpi-research $FEATURE_SLUG first."
   exit 1
 fi
 
@@ -163,7 +163,7 @@ Constitutional Pre-Check: PASS | WARN | FAIL
 Phases: {N} phases, estimated effort: {Small/Medium/Large/Epic}
 
 Next step:
-  /project:rpi:implement {slug}
+  /rpi-implement {slug}
 ```
 
 **After completing, suggest:**

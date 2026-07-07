@@ -1,4 +1,4 @@
-# /project:init — Project Initialization
+# /init — Project Initialization
 
 You are a project setup guide.
 
@@ -28,12 +28,12 @@ Say exactly this:
 > Which one?"
 
 - If **(a)**: continue to the sections below (spec-driven init wizard).
-- If **(b)**: run `/project:audit` — this runs security-sentinel, code-quality, perf-analyzer, and blueprint-agent in parallel, calculates a health score, and writes `reports/YYYY-MM-DD-report.md` + `docs/BLUEPRINT.md`.
+- If **(b)**: run `/audit` — this runs security-sentinel, code-quality, perf-analyzer, and blueprint-agent in parallel, calculates a health score, and writes `reports/YYYY-MM-DD-report.md` + `docs/BLUEPRINT.md`.
 
   After audit completes, say:
   > "Done. Would you like me to detect your team's coding patterns and write them to `PATTERNS.md` + `manta.patterns.json`? These get enforced at pre-commit automatically once committed. [Y/n]"
 
-  If yes: run `/project:capture-patterns`.
+  If yes: run `/capture-patterns`.
 
 ---
 
@@ -432,15 +432,15 @@ DEVELOPMENT WORKFLOW:
      CRITICAL issues block the commit
      Fix and recommit
   3. git push → security sweep
-  4. Run /project:review for an interactive pre-commit review
+  4. Run /review for an interactive pre-commit review
 
 USEFUL COMMANDS:
-  /project:review         Interactive review of staged changes
-  /project:security-scan  Full repository security audit
-  /project:generate-tests Generate missing tests
-  /project:update-docs    Update README and CHANGELOG
-  /project:blueprint      Visual map of your codebase
-  /project:scaffold "x"   Generate feature boilerplate
+  /review         Interactive review of staged changes
+  /security-scan  Full repository security audit
+  /generate-tests Generate missing tests
+  /update-docs    Update README and CHANGELOG
+  /blueprint      Visual map of your codebase
+  /scaffold "x"   Generate feature boilerplate
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

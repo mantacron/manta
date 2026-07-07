@@ -9,13 +9,13 @@ You are orchestrating the `ui-component-writer` to convert design inputs into pr
 ## Usage
 
 ```
-/project:ui                              ← scan ui-designs/ and process all unimplemented designs
-/project:ui "component description"      ← describe a component, optionally with an image attached
-/project:ui ui-designs/checkout.png      ← process a specific design file
-/project:ui --dry-run                    ← preview what would be generated (no files written)
-/project:ui --dry-run "description"      ← preview for a specific description without writing
-/project:ui --update ComponentName       ← update an existing component to match a new design
-/project:ui --audit                      ← scan existing components for DRY violations and inconsistencies
+/ui                              ← scan ui-designs/ and process all unimplemented designs
+/ui "component description"      ← describe a component, optionally with an image attached
+/ui ui-designs/checkout.png      ← process a specific design file
+/ui --dry-run                    ← preview what would be generated (no files written)
+/ui --dry-run "description"      ← preview for a specific description without writing
+/ui --update ComponentName       ← update an existing component to match a new design
+/ui --audit                      ← scan existing components for DRY violations and inconsistencies
 ```
 
 ---
@@ -59,9 +59,9 @@ find ui-designs/ -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \
 
 If `ui-designs/` doesn't exist:
 > "No `ui-designs/` folder found. You can:
-> - Create `ui-designs/` and drop your design files there, then re-run `/project:ui`
+> - Create `ui-designs/` and drop your design files there, then re-run `/ui`
 > - Attach an image directly to this message and describe the component
-> - Pass a description: `/project:ui 'a notification toast with icon and dismiss button'`"
+> - Pass a description: `/ui 'a notification toast with icon and dismiss button'`"
 
 Wait for the user to respond.
 
@@ -205,7 +205,7 @@ New components: 3 (CheckoutForm, Toast, ProfileHeader)
 Accessibility: all pass
 Responsive: ✓ mobile breakpoints added to all
 ──────────────────────────────────────────────────────
-Run /project:review to validate all generated code.
+Run /review to validate all generated code.
 ```
 
 ---

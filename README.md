@@ -43,11 +43,11 @@ gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh &
 
 # 2. Open your AI assistant:
 
-# Claude Code (full /project: command suite):
+# Claude Code (full / command suite):
 claude
-/project:poc          # fastest: 3 questions → spec + skeleton in under 5 minutes
+/poc          # fastest: 3 questions → spec + skeleton in under 5 minutes
 # — or —
-/project:init         # full wizard: spec + architecture + scaffold + first commit
+/init         # full wizard: spec + architecture + scaffold + first commit
 
 # Codex or Gemini (natural language — describe what you want):
 # codex "set up a new project: create a spec, directory structure, and first commit"
@@ -56,9 +56,9 @@ claude
 
 Then use the build loop:
 ```bash
-/project:scaffold "feature"   # boilerplate skeleton with TODOs (Claude Code)
+/scaffold "feature"   # boilerplate skeleton with TODOs (Claude Code)
 # — or —
-/project:write "feature"      # complete implementation — auth, validation, pagination baked in (Claude Code)
+/write "feature"      # complete implementation — auth, validation, pagination baked in (Claude Code)
 
 git commit                    # review hook fires automatically (all tools)
 ```
@@ -73,8 +73,8 @@ gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh &
 
 # Claude Code:
 claude
-/project:audit               # health scan → report with score + quick wins
-/project:capture-patterns    # detect your team's conventions → PATTERNS.md
+/audit               # health scan → report with score + quick wins
+/capture-patterns    # detect your team's conventions → PATTERNS.md
 
 # Codex:
 codex "run a full audit of this codebase and report security issues, code quality problems, and quick wins"
@@ -85,7 +85,7 @@ gemini "run a full audit of this codebase and report security issues, code quali
 gemini "scan this codebase and detect our coding conventions — naming, folder structure, error handling"
 ```
 
-Done. Every `git commit` now triggers the review pipeline automatically — regardless of which AI tool you use. If a commit is blocked, run `/project:fix` in Claude Code, or ask Codex/Gemini to suggest fixes for the issues listed above.
+Done. Every `git commit` now triggers the review pipeline automatically — regardless of which AI tool you use. If a commit is blocked, run `/fix` in Claude Code, or ask Codex/Gemini to suggest fixes for the issues listed above.
 
 ---
 
@@ -99,7 +99,7 @@ Done. Every `git commit` now triggers the review pipeline automatically — rega
 | **db-migration-guardian** | Table locks, missing rollbacks, unsafe `NOT NULL`, irreversible changes |
 
 A `CRITICAL` finding blocks the commit. A `WARNING` shows prominently and blocks the push.
-Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
+Run `/fix` to get AI-generated fix suggestions for whatever was caught.
 
 ---
 
@@ -107,24 +107,24 @@ Run `/project:fix` to get AI-generated fix suggestions for whatever was caught.
 
 | Command | What It Does |
 |---------|-------------|
-| `/project:init` | New project wizard (spec + architecture + scaffold) or quick setup for existing code |
-| `/project:poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton. No interview, no phases |
-| `/project:review` | Interactive 4-agent review of staged changes |
-| `/project:security-scan` | Full repository security audit (secrets + OWASP) |
-| `/project:fix [--apply]` | AI fix suggestions for the last blocked commit; `--apply` walks through each with Y/n and writes to files |
-| `/project:explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
-| `/project:debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
-| `/project:scaffold "feature"` | Generate boilerplate matching your project's conventions |
-| `/project:write "feature"` | Write complete production-ready implementation — rate limiting, auth, validation, pagination, transactions baked in |
-| `/project:ui [path]` | Convert screenshots/wireframes into responsive, accessible components |
-| `/project:blueprint` | Generate a visual map of your codebase (stack, API inventory, ER diagram) |
-| `/project:generate-tests` | Interactively generate missing tests |
-| `/project:update-docs` | Keep README and CHANGELOG in sync with recent changes |
-| `/project:capture-patterns` | Auto-detect your team's coding conventions, write to `PATTERNS.md` |
-| `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
-| `/project:rpi:research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
-| `/project:rpi:plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
-| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/implement/IMPLEMENT.md` |
+| `/init` | New project wizard (spec + architecture + scaffold) or quick setup for existing code |
+| `/poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton. No interview, no phases |
+| `/review` | Interactive 4-agent review of staged changes |
+| `/security-scan` | Full repository security audit (secrets + OWASP) |
+| `/fix [--apply]` | AI fix suggestions for the last blocked commit; `--apply` walks through each with Y/n and writes to files |
+| `/explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
+| `/debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
+| `/scaffold "feature"` | Generate boilerplate matching your project's conventions |
+| `/write "feature"` | Write complete production-ready implementation — rate limiting, auth, validation, pagination, transactions baked in |
+| `/ui [path]` | Convert screenshots/wireframes into responsive, accessible components |
+| `/blueprint` | Generate a visual map of your codebase (stack, API inventory, ER diagram) |
+| `/generate-tests` | Interactively generate missing tests |
+| `/update-docs` | Keep README and CHANGELOG in sync with recent changes |
+| `/capture-patterns` | Auto-detect your team's coding conventions, write to `PATTERNS.md` |
+| `/wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `/rpi-research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
+| `/rpi-plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
+| `/rpi-implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/implement/IMPLEMENT.md` |
 
 ---
 
@@ -134,9 +134,9 @@ Instead of writing code immediately, run the 4-step structured workflow for any 
 
 ```
 Step 1 — Write rpi/{slug}/REQUEST.md     ← describe the feature in plain language
-Step 2 — /project:rpi:research {slug}   ← 6 agents evaluate feasibility → GO/NO-GO
-Step 3 — /project:rpi:plan {slug}       ← UX + engineering plan + risk assessment
-Step 4 — /project:rpi:implement {slug}  ← phased code with gates, never all at once
+Step 2 — /rpi-research {slug}   ← 6 agents evaluate feasibility → GO/NO-GO
+Step 3 — /rpi-plan {slug}       ← UX + engineering plan + risk assessment
+Step 4 — /rpi-implement {slug}  ← phased code with gates, never all at once
 ```
 
 **Why:** Spending 5 minutes on research + planning catches scope problems, tech debt, and constitutional violations before a line of code is written. The GO/NO-GO gate (technical-cto-advisor) won't let you proceed if the cost outweighs the value.
@@ -176,19 +176,19 @@ For a solo developer or small team shipping ~10 commits/week, Manta eliminates:
 | Activity | Without Manta | With Manta | Saving |
 |----------|--------------|-----------|--------|
 | Catching security issues before PR | 30–60 min/PR | Instant (pre-commit) | **Most of it** |
-| Writing boilerplate for new features | 30–60 min | ~2 min (`/project:scaffold`) | **Most of it** |
-| Writing a full feature implementation | 2–4 hrs | ~10 min (`/project:write`) | **Most of it** |
-| Converting designs to components | 1–3 hrs | ~10 min (`/project:ui`) | **Most of it** |
-| Keeping docs in sync | 20–30 min | ~2 min (`/project:update-docs`) | **Most of it** |
-| Understanding a new codebase | 2–4 hrs | ~10 min (`/project:blueprint`) | **Most of it** |
+| Writing boilerplate for new features | 30–60 min | ~2 min (`/scaffold`) | **Most of it** |
+| Writing a full feature implementation | 2–4 hrs | ~10 min (`/write`) | **Most of it** |
+| Converting designs to components | 1–3 hrs | ~10 min (`/ui`) | **Most of it** |
+| Keeping docs in sync | 20–30 min | ~2 min (`/update-docs`) | **Most of it** |
+| Understanding a new codebase | 2–4 hrs | ~10 min (`/blueprint`) | **Most of it** |
 
 ---
 
-## `/project:scaffold` vs `/project:write`
+## `/scaffold` vs `/write`
 
 Two commands generate code. Use the right one for the job:
 
-| | `/project:scaffold` | `/project:write` |
+| | `/scaffold` | `/write` |
 |---|---|---|
 | **Output** | Skeleton with `TODO` markers | Complete, production-ready implementation |
 | **Business logic** | You fill it in | Written by the agent |
@@ -199,7 +199,7 @@ Two commands generate code. Use the right one for the job:
 | **Tests** | Minimal structure | Meaningful unit + integration tests |
 | **Best for** | When you want to control the implementation | When you want production-ready code fast |
 
-**When in doubt:** use `/project:write`. Run `/project:review` after either command.
+**When in doubt:** use `/write`. Run `/review` after either command.
 
 ---
 
@@ -209,7 +209,7 @@ Two commands generate code. Use the right one for the job:
 |---|:---:|:---:|:---:|:---:|
 | Git hook review pipeline (pre-commit / pre-push) | ✓ | ✓ | ✓ | ✓ |
 | Multi-agent parallel execution | ✓ | — | — | — |
-| `/project:` slash commands | ✓ | — | — | — |
+| `/` slash commands | ✓ | — | — | — |
 | Run any command manually | ✓ | ✓ | ✓ | — |
 | Coding guidance (conventions, patterns, security) | ✓ | ✓ | ✓ | ✓ |
 
@@ -262,7 +262,7 @@ The enterprise tier is what compliance officers, CISOs, and engineering VPs need
 ## Requirements
 
 - One AI CLI — whichever you prefer:
-  - [Claude Code](https://claude.ai/code): `npm install -g @anthropic-ai/claude-code` — full `/project:` command suite
+  - [Claude Code](https://claude.ai/code): `npm install -g @anthropic-ai/claude-code` — full `/` command suite
   - [OpenAI Codex](https://github.com/openai/codex): `npm install -g @openai/codex` — review pipeline + natural-language code gen
   - [Google Gemini CLI](https://github.com/google-gemini/gemini-cli): `npm install -g @google/gemini-cli` — review pipeline + natural-language code gen
   - [GitHub Copilot](https://github.com/features/copilot): VS Code / JetBrains extension — code writing with Manta's conventions baked in

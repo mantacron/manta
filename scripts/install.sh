@@ -121,8 +121,8 @@ This project uses [Manta](https://github.com/mantacron/manta): an 11-agent AI pi
 
 **On every `git commit`:** 4 agents review staged changes. CRITICAL findings block the commit.
 **On every `git push`:** 4 agents run a full branch review. CRITICAL and WARNING both block.
-**Commands available:** `/project:init`, `/project:review`, `/project:security-scan`,
-`/project:blueprint`, `/project:scaffold`, `/project:ui`, `/project:fix`, and more.
+**Commands available:** `/init`, `/review`, `/security-scan`,
+`/blueprint`, `/scaffold`, `/ui`, `/fix`, and more.
 
 See `.claude/agents/` and `.claude/commands/` for the full reference.
 EOF
@@ -229,7 +229,7 @@ else
 Drop design files here — screenshots, Figma exports, wireframes — and run:
 
 ```
-/project:ui
+/ui
 ```
 
 Manta's `ui-component-writer` will convert them into responsive, accessible, DRY-compliant
@@ -239,7 +239,7 @@ Supported formats: PNG, JPG, JPEG, SVG, WEBP, PDF
 Companion spec files: add a `.md` file with the same name for written annotations
   (e.g. `checkout.png` + `checkout.md`)
 EOF
-  log_ok "ui-designs/ created (drop designs here for /project:ui)"
+  log_ok "ui-designs/ created (drop designs here for /ui)"
 fi
 
 # ─── Step 8: Install / merge CLAUDE.md ────────────────────────────────────────
@@ -270,7 +270,7 @@ else
   install_file "manta.patterns.json" "manta.patterns.json"
 fi
 
-log_info "Run /project:capture-patterns to auto-populate from your codebase"
+log_info "Run /capture-patterns to auto-populate from your codebase"
 
 # ─── Step 8c: Install .mantaignore template ───────────────────────────────────
 log_step "Installing .mantaignore"
@@ -347,7 +347,7 @@ All agents and commands must target the **parent directory** for project files �
 | \`manta.patterns.json\` | \`../manta.patterns.json\` |
 | \`.mantaignore\` | \`../.mantaignore\` |
 
-This applies to every agent and every command — \`/project:init\`, \`/project:scaffold\`, \`/project:write\`, \`/project:audit\`, \`/project:blueprint\`, and all others.
+This applies to every agent and every command — \`/init\`, \`/scaffold\`, \`/write\`, \`/audit\`, \`/blueprint\`, and all others.
 EOF
       log_ok "CLAUDE.md updated with subdirectory mode context"
     fi
@@ -371,7 +371,7 @@ echo -e "  ${GREEN}${BOLD}✓ 14 commands${RESET}  installed to ${CYAN}.claude/c
 echo -e "  ${GREEN}${BOLD}✓ 2 git hooks${RESET}  installed to ${CYAN}.githooks/${RESET} (claude · codex · gemini)"
 echo -e "  ${GREEN}${BOLD}✓ PATTERNS.md${RESET}  + ${CYAN}manta.patterns.json${RESET} — pattern enforcement config"
 echo -e "  ${GREEN}${BOLD}✓ .mantaignore${RESET} template for suppressing false positives"
-echo -e "  ${GREEN}${BOLD}✓ ui-designs/${RESET} folder — drop designs here for ${CYAN}/project:ui${RESET}"
+echo -e "  ${GREEN}${BOLD}✓ ui-designs/${RESET} folder — drop designs here for ${CYAN}/ui${RESET}"
 echo -e "  ${GREEN}${BOLD}✓ AGENTS.md${RESET}    — instruction file for OpenAI Codex CLI"
 echo -e "  ${GREEN}${BOLD}✓ GEMINI.md${RESET}    — instruction file for Google Gemini CLI"
 echo -e "  ${GREEN}${BOLD}✓ copilot-instructions.md${RESET} — instruction file for GitHub Copilot"
@@ -382,11 +382,11 @@ echo -e "  1. Open Claude Code in this project:"
 echo -e "     ${CYAN}claude${RESET}"
 echo ""
 echo -e "  2. Run the setup wizard:"
-echo -e "     ${CYAN}/project:init${RESET}"
+echo -e "     ${CYAN}/init${RESET}"
 echo ""
 echo -e "  3. Or — start with a security scan on your existing code:"
-echo -e "     ${CYAN}/project:security-scan${RESET}"
-echo -e "     ${CYAN}/project:blueprint${RESET}   ← visual map of your codebase"
+echo -e "     ${CYAN}/security-scan${RESET}"
+echo -e "     ${CYAN}/blueprint${RESET}   ← visual map of your codebase"
 echo ""
 echo -e "${BOLD}To update later:${RESET}"
 echo -e "  ${CYAN}bash scripts/install.sh --force${RESET}"

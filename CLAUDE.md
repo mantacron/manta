@@ -12,7 +12,7 @@ bash scripts/install.sh
 
 Then open Claude Code:
 ```
-/project:init
+/init
 ```
 
 ---
@@ -20,15 +20,15 @@ Then open Claude Code:
 ## Workflow
 
 ```
-/project:init         ← start here for new projects
+/init         ← start here for new projects
      ↓
-/project:rpi:research "feature"  ← 6-agent GO/NO-GO gate → RESEARCH.md
-/project:rpi:plan "feature"      ← UX + engineering plan → PLAN.md
-/project:rpi:implement "feature" ← phased code with gates
+/rpi-research "feature"  ← 6-agent GO/NO-GO gate → RESEARCH.md
+/rpi-plan "feature"      ← UX + engineering plan → PLAN.md
+/rpi-implement "feature" ← phased code with gates
      ↓  (or skip RPI for simple changes:)
-/project:scaffold "feature"   ← generate code skeleton (boilerplate, TODOs to fill)
-/project:write "feature"      ← generate complete implementation (no TODOs, enterprise patterns)
-/project:ui [design]          ← convert design files into components
+/scaffold "feature"   ← generate code skeleton (boilerplate, TODOs to fill)
+/write "feature"      ← generate complete implementation (no TODOs, enterprise patterns)
+/ui [design]          ← convert design files into components
      ↓
 git commit
      ↓
@@ -37,7 +37,7 @@ Pre-commit hook fires → 4 agents review staged changes
      ↓
 CRITICAL? → Commit BLOCKED
 WARNING? → Commit allowed, shown prominently
-     → Run /project:fix for AI-generated fix suggestions
+     → Run /fix for AI-generated fix suggestions
      ↓
 git push → 3–4 agent branch review (db-migration-guardian trigger-routed: skips when no migration files in diff)
      ↓
@@ -78,9 +78,9 @@ For non-trivial features, use the structured Research → Plan → Implement wor
 
 ```
 Step 1: write rpi/{slug}/REQUEST.md          ← plain-language feature description
-Step 2: /project:rpi:research {slug}         ← 6-agent GO/NO-GO gate → rpi/{slug}/research/RESEARCH.md
-Step 3: /project:rpi:plan {slug}             ← pm.md, ux.md, eng.md, PLAN.md → rpi/{slug}/plan/
-Step 4: /project:rpi:implement {slug}        ← phased implementation + gates → rpi/{slug}/implement/IMPLEMENT.md
+Step 2: /rpi-research {slug}         ← 6-agent GO/NO-GO gate → rpi/{slug}/research/RESEARCH.md
+Step 3: /rpi-plan {slug}             ← pm.md, ux.md, eng.md, PLAN.md → rpi/{slug}/plan/
+Step 4: /rpi-implement {slug}        ← phased implementation + gates → rpi/{slug}/implement/IMPLEMENT.md
 ```
 
 Feature folder structure:
@@ -114,27 +114,27 @@ Agents read this at startup and update it after each run. Add new agents by crea
 
 | Command | Description |
 |---------|-------------|
-| `/project:init` | **Start here** — new project wizard or existing codebase quick setup |
-| `/project:poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton; no interview, no architecture phases |
-| `/project:audit [focus]` | Full codebase audit → `reports/YYYY-MM-DD-report.md` with score and quick wins |
-| `/project:review` | Full review of staged changes (4 agents) |
-| `/project:pre-commit-review` | Structured output for pre-commit git hook (4 agents: security, quality, perf, migrations) |
-| `/project:pre-push-review` | Structured output for pre-push git hook (3–4 agents: db-migration trigger-routed) |
-| `/project:generate-tests` | Interactive test generation for uncovered code |
-| `/project:update-docs` | Update README.md and CHANGELOG.md |
-| `/project:security-scan` | Full security audit (OWASP + secrets) |
-| `/project:blueprint` | Generate `docs/BLUEPRINT.md` — stack, API map, ER diagram, module map |
-| `/project:fix [--apply]` | AI fix suggestions for last blocked commit; `--apply` walks through each with Y/n and writes to files |
-| `/project:explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
-| `/project:debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
-| `/project:scaffold "description"` | Generate feature boilerplate matching project conventions |
-| `/project:write "description"` | Write complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions) baked in |
-| `/project:ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |
-| `/project:capture-patterns` | Scan codebase and auto-generate `PATTERNS.md` + `manta.patterns.json` |
-| `/project:wiki [--url=URL]` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
-| `/project:rpi:research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
-| `/project:rpi:plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
-| `/project:rpi:implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
+| `/init` | **Start here** — new project wizard or existing codebase quick setup |
+| `/poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton; no interview, no architecture phases |
+| `/audit [focus]` | Full codebase audit → `reports/YYYY-MM-DD-report.md` with score and quick wins |
+| `/review` | Full review of staged changes (4 agents) |
+| `/pre-commit-review` | Structured output for pre-commit git hook (4 agents: security, quality, perf, migrations) |
+| `/pre-push-review` | Structured output for pre-push git hook (3–4 agents: db-migration trigger-routed) |
+| `/generate-tests` | Interactive test generation for uncovered code |
+| `/update-docs` | Update README.md and CHANGELOG.md |
+| `/security-scan` | Full security audit (OWASP + secrets) |
+| `/blueprint` | Generate `docs/BLUEPRINT.md` — stack, API map, ER diagram, module map |
+| `/fix [--apply]` | AI fix suggestions for last blocked commit; `--apply` walks through each with Y/n and writes to files |
+| `/explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
+| `/debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
+| `/scaffold "description"` | Generate feature boilerplate matching project conventions |
+| `/write "description"` | Write complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions) baked in |
+| `/ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |
+| `/capture-patterns` | Scan codebase and auto-generate `PATTERNS.md` + `manta.patterns.json` |
+| `/wiki [--url=URL]` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
+| `/rpi-research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
+| `/rpi-plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
+| `/rpi-implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
 
 ---
 
@@ -200,7 +200,7 @@ Manta enforces project-specific coding conventions at pre-commit via two config 
 | `PATTERNS.md` | Human-readable docs — team reference |
 
 ```
-/project:capture-patterns   ← auto-scans codebase and writes both files
+/capture-patterns   ← auto-scans codebase and writes both files
 ```
 
 ---
@@ -236,7 +236,7 @@ git rev-parse --show-toplevel
 | `manta.patterns.json` | `../manta.patterns.json` |
 | `.mantaignore` | `../.mantaignore` |
 
-This applies to every agent and every command — `/project:init`, `/project:scaffold`, `/project:write`, `/project:audit`, `/project:blueprint`, and all others.
+This applies to every agent and every command — `/init`, `/scaffold`, `/write`, `/audit`, `/blueprint`, and all others.
 
 ---
 

@@ -11,7 +11,7 @@ git clone https://github.com/mantacron/manta /tmp/manta
 bash /tmp/manta/scripts/install.sh
 rm -rf /tmp/manta
 claude
-/project:init
+/init
 ```
 
 ---
@@ -69,18 +69,18 @@ SKIP_CLAUDE_PUSH_REVIEW=1 git push
 
 | Command | What it does |
 |---------|-------------|
-| `/project:init` | New project wizard or quick setup for existing code |
-| `/project:review` | Manual 4-agent review of staged changes |
-| `/project:fix` | AI fix suggestions for the last blocked commit |
-| `/project:security-scan` | Full repo security audit |
-| `/project:scaffold "feature"` | Boilerplate skeleton — you fill in the logic |
-| `/project:write "feature"` | Complete production implementation — auth, rate limiting, pagination baked in |
-| `/project:ui [path]` | Convert screenshots/wireframes → responsive components |
-| `/project:blueprint` | Generate codebase map (stack, API inventory, ER diagram) |
-| `/project:generate-tests` | Interactively generate missing tests |
-| `/project:update-docs` | Update README and CHANGELOG |
-| `/project:capture-patterns` | Auto-detect conventions → write to PATTERNS.md |
-| `/project:wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — routes, screenshots, features, spec comparison |
+| `/init` | New project wizard or quick setup for existing code |
+| `/review` | Manual 4-agent review of staged changes |
+| `/fix` | AI fix suggestions for the last blocked commit |
+| `/security-scan` | Full repo security audit |
+| `/scaffold "feature"` | Boilerplate skeleton — you fill in the logic |
+| `/write "feature"` | Complete production implementation — auth, rate limiting, pagination baked in |
+| `/ui [path]` | Convert screenshots/wireframes → responsive components |
+| `/blueprint` | Generate codebase map (stack, API inventory, ER diagram) |
+| `/generate-tests` | Interactively generate missing tests |
+| `/update-docs` | Update README and CHANGELOG |
+| `/capture-patterns` | Auto-detect conventions → write to PATTERNS.md |
+| `/wiki [--url=URL]` | Generate product wiki → `docs/wiki/` — routes, screenshots, features, spec comparison |
 
 ---
 
@@ -97,6 +97,6 @@ src/generated/**     DRY       # Generated code
 
 ## Want More?
 
-**Manta Enterprise (Cathy)** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 23 agents, 29 commands.
+**Manta Enterprise** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 30 agents, 32 commands.
 
 Full documentation: [README.md](README.md)

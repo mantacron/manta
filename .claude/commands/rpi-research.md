@@ -1,5 +1,5 @@
 ---
-name: rpi:research
+name: rpi-research
 description: RPI Step 2 — Research and analyze a feature for GO/NO-GO. Runs 6 agents in sequence (requirement-parser → product-manager → Explore → senior-software-engineer → constitutional-validator → technical-cto-advisor) and writes rpi/{slug}/research/RESEARCH.md.
 argument-hint: "<feature-slug>"
 ---
@@ -52,8 +52,8 @@ cat "rpi/$FEATURE_SLUG/REQUEST.md"
 Also detect subdirectory mode:
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 ```
 
 ---
@@ -148,7 +148,7 @@ Scores:
   Constitutional:         PASS | WARN | FAIL
 
 Next steps:
-  GO/CONDITIONAL GO → /project:rpi:plan {slug}
+  GO/CONDITIONAL GO → /rpi-plan {slug}
   DEFER/NO-GO       → Review rpi/{slug}/research/RESEARCH.md for rationale
 ```
 

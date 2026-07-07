@@ -91,8 +91,8 @@ INFO (optional improvements):
 OVERALL VERDICT: ✅ PASS | ⚠️ PASS WITH WARNINGS | 🚫 BLOCKED
 
 [If BLOCKED]: Fix the [N] critical issue(s) above, then commit again.
-  → Run /project:fix for AI-generated fix suggestions.
-[If PASS WITH WARNINGS]: Commit allowed. Warnings will block at push time — run /project:fix to address them.
+  → Run /fix for AI-generated fix suggestions.
+[If PASS WITH WARNINGS]: Commit allowed. Warnings will block at push time — run /fix to address them.
 [If PASS]: Commit looks good.
 ══════════════════════════════════════════════════════════
 

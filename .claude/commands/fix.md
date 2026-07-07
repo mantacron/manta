@@ -5,8 +5,8 @@ Get AI-generated fix suggestions for issues found in the last commit review, or 
 ## Usage
 
 ```
-/project:fix                        ← fix issues from the most recent blocked commit review
-/project:fix reports/2024-01-15-1030-commit-review.md   ← fix issues from a specific report
+/fix                        ← fix issues from the most recent blocked commit review
+/fix reports/2024-01-15-1030-commit-review.md   ← fix issues from a specific report
 ```
 
 ## Instructions
@@ -29,7 +29,7 @@ If no reports exist at all, output:
 ```
 No review reports found in reports/. Run a review first:
   git add [files] && git commit   ← triggers pre-commit review
-  /project:review                  ← manual interactive review
+  /review                  ← manual interactive review
 ```
 And stop.
 
@@ -72,4 +72,4 @@ After applying fixes, re-stage and commit:
 - This command is read-only research + stdout output only — it never modifies files
 - Fixes are suggestions only — the developer applies them manually
 - Do not re-run the full review — that happens automatically on the next commit
-- If the report is older than 24 hours, warn: "This report is from [date] — the codebase may have changed. Consider running /project:review for a fresh review."
+- If the report is older than 24 hours, warn: "This report is from [date] — the codebase may have changed. Consider running /review for a fresh review."

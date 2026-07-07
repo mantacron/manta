@@ -14,10 +14,10 @@ You design the user experience for a planned feature — flows, interactions, st
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
+MANTA_DIR=$(pwd)
 ```
 
-If `GIT_ROOT` != `CATHY_DIR`, prefix all project paths with `../`.
+If `GIT_ROOT` != `MANTA_DIR`, prefix all project paths with `../`.
 
 ## Context to Load
 

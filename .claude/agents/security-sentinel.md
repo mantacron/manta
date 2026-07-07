@@ -30,8 +30,8 @@ grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-ki
 ```bash
 # Detect subdirectory mode (manta installed inside a project subfolder)
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(pwd)
-[ "$GIT_ROOT" != "$CATHY_DIR" ] && PREFIX="../" || PREFIX=""
+MANTA_DIR=$(pwd)
+[ "$GIT_ROOT" != "$MANTA_DIR" ] && PREFIX="../" || PREFIX=""
 ```
 
 1. Read the diff — identify changed files and what changed
@@ -52,7 +52,7 @@ command -v semgrep &>/dev/null && echo "semgrep available" || echo "semgrep not 
 If available, write these rules to a temp file and run against changed files:
 
 ```bash
-cat > /tmp/cathy-sast-rules.yaml << 'RULES'
+cat > /tmp/manta-sast-rules.yaml << 'RULES'
 rules:
 
   - id: sql-injection-string-format
@@ -172,12 +172,12 @@ RULES
 # Run against staged/changed files only (or full project if no diff context)
 CHANGED_FILES=$(git diff --cached --name-only 2>/dev/null | grep -v "^$" | head -20)
 if [ -n "$CHANGED_FILES" ]; then
-  echo "$CHANGED_FILES" | xargs -I{} semgrep --config /tmp/cathy-sast-rules.yaml --no-rewrite-rule-ids {} 2>/dev/null
+  echo "$CHANGED_FILES" | xargs -I{} semgrep --config /tmp/manta-sast-rules.yaml --no-rewrite-rule-ids {} 2>/dev/null
 else
-  semgrep --config /tmp/cathy-sast-rules.yaml --no-rewrite-rule-ids . 2>/dev/null
+  semgrep --config /tmp/manta-sast-rules.yaml --no-rewrite-rule-ids . 2>/dev/null
 fi
 
-rm -f /tmp/cathy-sast-rules.yaml
+rm -f /tmp/manta-sast-rules.yaml
 ```
 
 **Incorporating Semgrep results:**

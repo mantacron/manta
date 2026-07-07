@@ -1,6 +1,6 @@
 **Begin by outputting:** `[ Manta Enterprise — Update Docs ]`
 
-Update project documentation: README.md and CHANGELOG.md based on recent changes. Optionally pass a specific message: `/project:update-docs "Added OAuth2 authentication"`
+Update project documentation: README.md and CHANGELOG.md based on recent changes. Optionally pass a specific message: `/update-docs "Added OAuth2 authentication"`
 
 ## Instructions
 
@@ -90,6 +90,6 @@ Undocumented env vars:
 ```
 Next steps:
   → git add README.md CHANGELOG.md && git commit    commit doc updates
-  → /project:release [patch|minor|major]            cut a release if ready
-  → /project:audit                                  run full health report
+  → /release [patch|minor|major]            cut a release if ready
+  → /audit                                  run full health report
 ```

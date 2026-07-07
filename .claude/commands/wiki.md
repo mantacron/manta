@@ -16,8 +16,8 @@ Invoke the `wiki-agent` to generate a product wiki at `docs/wiki/`.
 
 ```bash
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-CATHY_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-if [ "$GIT_ROOT" != "$CATHY_DIR" ]; then
+MANTA_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+if [ "$GIT_ROOT" != "$MANTA_DIR" ]; then
   echo "SUBDIRECTORY_MODE: true — targeting $GIT_ROOT"
   cd "$GIT_ROOT"
 fi
@@ -31,7 +31,7 @@ Invoke `wiki-agent` with full context:
 
 - The current working directory (or parent if subdirectory mode)
 - Whether `spec/SPEC.md` exists
-- Any path or description passed as an argument to this command (e.g., `/project:wiki --url=http://localhost:4000` to use a custom base URL for screenshots)
+- Any path or description passed as an argument to this command (e.g., `/wiki --url=http://localhost:4000` to use a custom base URL for screenshots)
 - Whether the user mentioned any specific pages or features to prioritize
 
 ## Output Location
@@ -50,8 +50,8 @@ Report the final summary from the wiki-agent, then suggest next steps:
 
 ```
 Next steps:
-  • Start your app and re-run /project:wiki to capture screenshots
+  • Start your app and re-run /wiki to capture screenshots
   • Edit docs/wiki/index.md to add context the agent couldn't infer from code
-  • If the spec comparison shows unbuilt features, run /project:spec-check for full detail
+  • If the spec comparison shows unbuilt features, run /spec-check for full detail
   • Commit docs/wiki/ to keep it in sync with the codebase
 ```

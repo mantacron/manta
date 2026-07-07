@@ -1,5 +1,5 @@
 ---
-name: rpi:implement
+name: rpi-implement
 description: RPI Step 4 — Execute phased implementation with validation gates. Reads PLAN.md and eng.md, implements phase-by-phase, runs test gates after each phase, and writes an IMPLEMENT.md record.
 argument-hint: "<feature-slug> [--phase N]"
 ---
@@ -35,7 +35,7 @@ echo "Implementing: $FEATURE_SLUG (from Phase $START_PHASE)"
 # Validate
 if [ ! -f "rpi/$FEATURE_SLUG/plan/PLAN.md" ]; then
   echo "ERROR: rpi/$FEATURE_SLUG/plan/PLAN.md not found."
-  echo "Run /project:rpi:plan $FEATURE_SLUG first."
+  echo "Run /rpi-plan $FEATURE_SLUG first."
   exit 1
 fi
 
@@ -148,7 +148,7 @@ Implementation record: rpi/{slug}/implement/IMPLEMENT.md
 Next steps:
   1. Review changes: git diff HEAD
   2. Create a PR: gh pr create
-  3. Update docs if needed: /project:update-docs
+  3. Update docs if needed: /update-docs
 ```
 
 ---
@@ -168,4 +168,4 @@ Next steps:
 
 **If tests are missing:**
 - Issue a WARNING: "No tests exist for this phase's changes — gate SKIPPED"
-- Recommend: "Consider running /project:generate-tests after implementation"
+- Recommend: "Consider running /generate-tests after implementation"
