@@ -31,7 +31,7 @@ scan() {
   local pattern="$2"
   local counter_var="$3"
   local matches
-  matches=$(echo "$STAGED_DIFF" | grep -E "^\+" | grep -v "^\+\+\+" | grep -E "$pattern" | head -5 || true)
+  matches=$(echo "$STAGED_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" | grep -E -- "$pattern" | head -5 || true)
   if [[ -n "$matches" ]]; then
     eval "$counter_var=\$((\$$counter_var + 1))"
     SIGNALS_DETAIL+="  [$label] $(echo "$matches" | head -2 | sed 's/^/    /')\n"
