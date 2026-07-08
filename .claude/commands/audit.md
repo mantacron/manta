@@ -93,7 +93,9 @@ Launch all applicable agents simultaneously as background tasks. Each agent rece
 
 ---
 
-## Step 3 — Calculate Health Score
+## Step 3 — Deduplicate, Then Calculate Health Score
+
+Before scoring, deduplicate across agents: if `security-sentinel` and `code-quality` both flag the same file:line for the same root cause, count it once at the higher severity and note both sources — `(flagged by: security-sentinel, code-quality)`. Only merge genuine overlaps; two different problems on the same line stay separate. Skipping this step double-penalizes the score for issues that just happen to be visible from two angles.
 
 ```
 Base score: 100
