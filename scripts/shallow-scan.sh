@@ -25,13 +25,17 @@ CRYPTO=0
 QUALITY=0
 SIGNALS_DETAIL=""
 
-# Helper: grep staged diff for pattern, increment counter and log matches
+# Helper: grep staged diff for pattern, increment counter and log matches.
+# Pass "-i" as the 4th arg for case-insensitive matching (credential names are
+# often SCREAMING_CASE constants — DB_PASS, API_KEY — not the lowercase words
+# the pattern spells out).
 scan() {
   local label="$1"
   local pattern="$2"
   local counter_var="$3"
+  local case_flag="${4:-}"
   local matches
-  matches=$(echo "$STAGED_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" | grep -E -- "$pattern" | head -5 || true)
+  matches=$(echo "$STAGED_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" | grep -E $case_flag -- "$pattern" | head -5 || true)
   if [[ -n "$matches" ]]; then
     eval "$counter_var=\$((\$$counter_var + 1))"
     SIGNALS_DETAIL+="  [$label] $(echo "$matches" | head -2 | sed 's/^/    /')\n"
@@ -39,13 +43,20 @@ scan() {
 }
 
 # ─── Secret patterns ──────────────────────────────────────────────────────────
-scan "SECRET" '(password|secret|api_key|apikey|token|private_key)\s*=\s*["\x27][^"$\x27]{8,}' "SECRETS"
+scan "SECRET" '(password|secret|api_key|apikey|token|private_key)\s*=\s*["\x27][^"$\x27]{8,}' "SECRETS" -i
 scan "SECRET" '(sk_live_|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|xoxb-|AIza[A-Za-z0-9_-]{35})' "SECRETS"
 scan "SECRET" '-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY' "SECRETS"
 scan "SECRET" '["'"'"'][A-Za-z0-9+/]{40,}={0,2}["'"'"']' "SECRETS"
+# PHP/Ruby/Java-style constant declarations: define('DB_PASS', '...'), const API_KEY = "..."
+scan "SECRET" '(define\(\s*["'"'"']|const\s+)\w*(PASS|SECRET|API_KEY|TOKEN|PRIVATE_KEY)\w*["'"'"']?\s*[,=]\s*["'"'"'][^"'"'"']{6,}' "SECRETS" -i
 
 # ─── Injection sinks ──────────────────────────────────────────────────────────
 scan "SQLI"   'cursor\.execute\(f["'"'"']|execute\(".*"\s*%\s*\w|execute\(".*"\s*\+\s*' "INJECTION"
+# PHP/Perl-style string-interpolated or concatenated SQL: "SELECT ... $var" / "SELECT ..." . $var
+# (deliberately lenient about quote style in the middle — PHP double-quoted
+# strings routinely embed single-quoted variables, e.g. "...= '$userId'")
+scan "SQLI"   '["'"'"'](SELECT|INSERT|UPDATE|DELETE)\b.{0,100}\$\w+' "INJECTION" -i
+scan "SQLI"   '["'"'"'][^"'"'"']*\b(SELECT|INSERT|UPDATE|DELETE)\b[^"'"'"']*["'"'"']\s*\.\s*\$?\w+' "INJECTION" -i
 scan "CMDI"   'subprocess\.(run|call|Popen).*shell\s*=\s*True|os\.system\(' "INJECTION"
 scan "EVAL"   '\beval\s*\(|exec\s*\(' "INJECTION"
 scan "XSS"    'innerHTML\s*=|dangerouslySetInnerHTML|document\.write\(' "INJECTION"
@@ -54,6 +65,7 @@ scan "SSTI"   'render_template_string\(|Markup\(' "INJECTION"
 # ─── Weak crypto ──────────────────────────────────────────────────────────────
 scan "CRYPTO" '\b(md5|sha1|sha-1|des|rc4)\s*[\(=]|hashlib\.md5|hashlib\.sha1' "CRYPTO"
 scan "CRYPTO" 'Math\.random\(\)|random\.random\(\)|random\.randint\(' "CRYPTO"
+scan "CRYPTO" 'Digest::(MD5|SHA1)|MessageDigest\.getInstance\(["'"'"'](MD5|SHA-?1)["'"'"']' "CRYPTO"
 
 # ─── Quality signals (DRY, complexity hints) ─────────────────────────────────
 scan "QUALITY" 'TODO|FIXME|HACK|XXX|NOSONAR' "QUALITY"
