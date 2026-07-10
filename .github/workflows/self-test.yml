@@ -1,0 +1,25 @@
+name: Self-Test
+
+# Mechanical health checks for the repo itself — shell syntax, naming
+# regressions, installer/inventory parity, an end-to-end installer run, and
+# behavioral checks (shallow-scan detection, hook verdict parsing, project-map
+# cache). No AI, no secrets, finishes in under a minute.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  self-test:
+    name: Repo self-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run self-test
+        run: bash scripts/self-test.sh
