@@ -6,14 +6,6 @@ Runs 3–4 agents. security-sentinel, code-quality, and perf-analyzer always run
 
 ## Instructions
 
-### Step 1: Load suppressions
-
-```bash
-cat .mantaignore 2>/dev/null
-```
-
-Parse `.mantaignore` if present (skip `#` lines and blanks). Apply suppression rules to all agent findings before including them in the output: if a finding's file path matches the glob and the issue description contains the keyword, skip it silently.
-
 ### Step 2: Get branch diff
 
 ```bash
@@ -41,53 +33,27 @@ Use the Agent tool to run the active agents simultaneously against the full bran
 - **perf-analyzer**: always run — CRITICAL performance issues only (N+1, blocking async, memory leaks)
 - **db-migration-guardian**: run only if `SKIP_DB_GUARDIAN=false` (migration files detected in diff)
 
-### Step 4: Output structured result
+### Step 4: Delegate synthesis to review-reporter
 
-Output EXACTLY in this format (the git hook parses this):
+Do **not** apply suppressions, deduplicate findings, or assemble the verdict yourself — that logic lives in one place: the `review-reporter` agent (`.claude/agents/review-reporter.md`).
 
-```
-=== CLAUDE PRE-PUSH REVIEW ===
+Invoke `review-reporter` via the Agent tool with:
+- **Mode**: `push`
+- The full raw output of every agent that ran, plus each agent's status (`PASS`/`WARN`/`BLOCK`/`SKIP`)
+- The changed file list from Step 2
+- Which agents were skipped and why (routing flags from Step 2.5)
 
-CHANGED FILES:
-[list of changed files]
+The reporter applies `.mantaignore` + inline `manta-ignore` suppressions, deduplicates findings across agents, and returns the complete `=== CLAUDE PRE-PUSH REVIEW ===` block ending in the `PUSH_VERDICT:` line.
 
-AGENT RESULTS:
-security-sentinel: [PASS|WARN|BLOCK]
-code-quality: [PASS|WARN|BLOCK]
-perf-analyzer: [PASS|WARN|BLOCK]
-db-migration-guardian: [PASS|WARN|BLOCK|SKIP]
+### Step 5: Relay the verdict
 
-CRITICAL ISSUES:
-[If any CRITICAL findings from any agent, list them here numbered]
-[Format: N. [AGENT] [file:line] — [issue description]]
-[If none: "None"]
+Output the review-reporter's result **verbatim** as your final output — the git hook parses it. Do not add anything after the verdict lines.
 
-WARNINGS:
-[If any WARNING findings, list numbered]
-[If none: "None"]
-
-=== END REVIEW ===
-
-PUSH_VERDICT: PASS
-```
-
-OR if there are critical issues:
-
-```
-PUSH_VERDICT: BLOCK
-BLOCK_REASON: [N critical issues found — see above]
-```
-
-OR if there are warnings but no critical issues:
-
-```
-PUSH_VERDICT: WARN
-BLOCK_REASON: [N warnings found — see above]
-```
+If review-reporter fails or times out, fail closed (push-time blocks on warnings by design): output the raw agent statuses, then `PUSH_VERDICT: WARN` and `BLOCK_REASON: review-reporter unavailable — findings not synthesized, review manually`.
 
 ### Rules
 
 - Do not ask questions — this is non-interactive
 - `PUSH_VERDICT: BLOCK` for CRITICAL issues, `PUSH_VERDICT: WARN` for warnings only
-- The last two lines must always be one of the three verdict formats above
+- The last two lines must always be one of the three verdict formats
 - SKIP agents that have no relevant input (no migrations)

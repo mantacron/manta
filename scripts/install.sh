@@ -2,7 +2,7 @@
 # Manta — Installer
 #
 # Installs the Manta Edition into any project.
-# 11 agents · 14 commands · 2 git hooks
+# 20 agents · 21 commands · 2 git hooks
 # Safe to re-run — existing files are preserved unless --force is passed.
 #
 # Usage:
@@ -46,7 +46,7 @@ log_info()  { echo -e "  ${CYAN}ℹ${RESET} $1"; }
 echo ""
 echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════╗${RESET}"
 echo -e "${CYAN}${BOLD}║        Manta — Installer                 ║${RESET}"
-echo -e "${CYAN}${BOLD}║  11 agents · 14 commands · automated code review   ║${RESET}"
+echo -e "${CYAN}${BOLD}║  20 agents · 21 commands · automated code review   ║${RESET}"
 echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════╝${RESET}"
 echo ""
 
@@ -117,7 +117,7 @@ install_claude_md() {
 
 ## Manta — AI Review Pipeline
 
-This project uses [Manta](https://github.com/mantacron/manta): an 11-agent AI pipeline for automated code review.
+This project uses [Manta](https://github.com/mantacron/manta): a 20-agent AI pipeline for automated code review.
 
 **On every `git commit`:** 4 agents review staged changes. CRITICAL findings block the commit.
 **On every `git push`:** 4 agents run a full branch review. CRITICAL and WARNING both block.
@@ -150,12 +150,21 @@ AGENTS=(
   "perf-analyzer"
   "db-migration-guardian"
   "remediation-agent"
+  "review-reporter"
   "scaffolding-agent"
   "code-writer"
   "doc-keeper"
   "pr-summarizer"
   "blueprint-agent"
   "ui-component-writer"
+  "wiki-agent"
+  "requirement-parser"
+  "product-manager"
+  "ux-planner"
+  "senior-software-engineer"
+  "technical-cto-advisor"
+  "constitutional-validator"
+  "documentation-analyst-writer"
 )
 
 mkdir -p .claude/agents
@@ -168,6 +177,7 @@ log_step "Installing commands (.claude/commands/)"
 
 COMMANDS=(
   "init"
+  "poc"
   "audit"
   "review"
   "pre-commit-review"
@@ -177,10 +187,16 @@ COMMANDS=(
   "security-scan"
   "blueprint"
   "fix"
+  "explain"
+  "debt"
   "scaffold"
   "write"
   "capture-patterns"
   "ui"
+  "wiki"
+  "rpi-research"
+  "rpi-plan"
+  "rpi-implement"
 )
 
 mkdir -p .claude/commands
@@ -208,13 +224,15 @@ install_file ".githooks/pre-push"   ".githooks/pre-push"
 chmod +x .githooks/pre-commit .githooks/pre-push
 log_ok "Git hooks made executable"
 
-# ─── Step 6: Install setup script ─────────────────────────────────────────────
-log_step "Installing scripts/setup.sh"
+# ─── Step 6: Install scripts ──────────────────────────────────────────────────
+log_step "Installing scripts/"
 
 mkdir -p scripts
 install_file "scripts/setup.sh" "scripts/setup.sh"
-chmod +x scripts/setup.sh
-log_ok "scripts/setup.sh made executable"
+install_file "scripts/shallow-scan.sh" "scripts/shallow-scan.sh"
+install_file "scripts/build-project-map.sh" "scripts/build-project-map.sh"
+chmod +x scripts/setup.sh scripts/shallow-scan.sh scripts/build-project-map.sh
+log_ok "scripts made executable"
 
 # ─── Step 7: Create ui-designs/ folder ───────────────────────────────────────
 log_step "Creating ui-designs/ folder"
@@ -366,8 +384,8 @@ echo -e "${CYAN}${BOLD}═══════════════════
 echo -e "${CYAN}${BOLD}                 Installation Complete               ${RESET}"
 echo -e "${CYAN}${BOLD}════════════════════════════════════════════════════${RESET}"
 echo ""
-echo -e "  ${GREEN}${BOLD}✓ 11 agents${RESET}    installed to ${CYAN}.claude/agents/${RESET}"
-echo -e "  ${GREEN}${BOLD}✓ 14 commands${RESET}  installed to ${CYAN}.claude/commands/${RESET}"
+echo -e "  ${GREEN}${BOLD}✓ ${#AGENTS[@]} agents${RESET}    installed to ${CYAN}.claude/agents/${RESET}"
+echo -e "  ${GREEN}${BOLD}✓ ${#COMMANDS[@]} commands${RESET}  installed to ${CYAN}.claude/commands/${RESET}"
 echo -e "  ${GREEN}${BOLD}✓ 2 git hooks${RESET}  installed to ${CYAN}.githooks/${RESET} (claude · codex · gemini)"
 echo -e "  ${GREEN}${BOLD}✓ PATTERNS.md${RESET}  + ${CYAN}manta.patterns.json${RESET} — pattern enforcement config"
 echo -e "  ${GREEN}${BOLD}✓ .mantaignore${RESET} template for suppressing false positives"

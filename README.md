@@ -13,7 +13,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**19 agents. 21 commands. 2 git hooks. Works on new projects and existing codebases.**
+**20 agents. 21 commands. 2 git hooks. Works on new projects and existing codebases.**
 
 > Works with **[Claude Code](https://claude.ai/code)**, **[OpenAI Codex](https://github.com/openai/codex)**, **[Google Gemini CLI](https://github.com/google-gemini/gemini-cli)**, and **[GitHub Copilot](https://github.com/features/copilot)**. Git hooks auto-detect whichever CLI is installed.
 
@@ -152,6 +152,7 @@ Step 4 — /rpi-implement {slug}  ← phased code with gates, never all at once
 | `perf-analyzer` | N+1 queries, memory leaks, blocking operations, bundle bloat |
 | `db-migration-guardian` | Migration safety: locking, rollback, unsafe constraints, irreversible ops |
 | `remediation-agent` | Concrete fix suggestions for blocked commits |
+| `review-reporter` | Synthesizes review findings into the final verdict — suppression, dedup, hook-parsed output |
 | `scaffolding-agent` | Feature boilerplate matching your existing project conventions |
 | `code-writer` | Complete production-ready implementations — rate limiting, auth, validation, pagination, transactions, audit trail all written (not just scaffolded) |
 | `doc-keeper` | Keeps README and CHANGELOG in sync with code changes |

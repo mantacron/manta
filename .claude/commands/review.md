@@ -4,15 +4,7 @@ Run a pre-commit review on the staged changes. Orchestrate the 4 core review age
 
 ## Instructions
 
-You are the **Review Orchestrator**. Run each agent below in order and consolidate their findings into a final verdict.
-
-### Step 0: Load suppressions
-
-```bash
-cat .mantaignore 2>/dev/null
-```
-
-Parse `.mantaignore` if present. Apply suppression rules to all agent findings before including them in the consolidated report: if a finding's file path matches the glob and the issue description contains the keyword, skip it silently. At the end of the report, note how many findings were suppressed and from which file if any were.
+You are the **Review Orchestrator**. Run each agent below and hand their findings to `review-reporter` for the final consolidated report.
 
 ### Step 1: Gather Context
 
@@ -35,71 +27,19 @@ Run these agents by using the Agent tool with the appropriate subagent_type and 
 
 You can run agents 1-4 in parallel since they're independent.
 
-### Step 3: Consolidated Report
+### Step 3: Delegate synthesis to review-reporter
 
-Output the following structured report:
+Do **not** apply suppressions, deduplicate findings, or assemble the report yourself — that logic lives in one place: the `review-reporter` agent (`.claude/agents/review-reporter.md`).
 
-```
-╔══════════════════════════════════════════════════════════╗
-║           CLAUDE CODE PRE-COMMIT REVIEW                  ║
-╚══════════════════════════════════════════════════════════╝
+Invoke `review-reporter` via the Agent tool with:
+- **Mode**: `interactive`
+- The full raw output of every agent that ran, plus each agent's status (`PASS`/`WARN`/`BLOCK`/`SKIP`)
+- The staged file list from Step 1, in the agent order above (for the per-agent report boxes)
+- Which agents were skipped and why
 
-Files reviewed: [N]
-[list of files]
+The reporter applies `.mantaignore` + inline `manta-ignore` suppressions, deduplicates findings across agents, and assembles the consolidated boxed report ending in the `COMMIT_VERDICT:` line.
 
-┌─────────────────────────────────────────────────────────┐
-│ CODE QUALITY           [PASS|WARN|BLOCK]                 │
-├─────────────────────────────────────────────────────────┤
-│ [Critical findings if any]                               │
-│ [Warning findings if any]                                │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ SECURITY SENTINEL      [PASS|WARN|BLOCK]                 │
-├─────────────────────────────────────────────────────────┤
-│ [Critical findings if any]                               │
-│ [Warning findings if any]                                │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ PERF ANALYZER          [PASS|WARN|BLOCK]                 │
-├─────────────────────────────────────────────────────────┤
-│ [Critical findings if any]                               │
-│ [Warning findings if any]                                │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ DB MIGRATION GUARDIAN  [PASS|WARN|BLOCK|SKIP]            │
-├─────────────────────────────────────────────────────────┤
-│ [Critical findings if any, or "No migrations staged"]    │
-└─────────────────────────────────────────────────────────┘
-
-══════════════════════════════════════════════════════════
-CRITICAL ISSUES (must fix before commit):
-[Numbered list of all CRITICAL findings across all agents]
-[Or "None" if clean]
-
-WARNINGS (should fix soon):
-[Numbered list of all WARNING findings across all agents]
-[Or "None"]
-
-INFO (optional improvements):
-[Numbered list of INFO items]
-[Or "None"]
-══════════════════════════════════════════════════════════
-
-OVERALL VERDICT: ✅ PASS | ⚠️ PASS WITH WARNINGS | 🚫 BLOCKED
-
-[If BLOCKED]: Fix the [N] critical issue(s) above, then commit again.
-  → Run /fix for AI-generated fix suggestions.
-[If PASS WITH WARNINGS]: Commit allowed. Warnings will block at push time — run /fix to address them.
-[If PASS]: Commit looks good.
-══════════════════════════════════════════════════════════
-
-COMMIT_VERDICT: PASS | WARN | BLOCK
-```
-
-The final line `COMMIT_VERDICT: PASS` or `COMMIT_VERDICT: BLOCK` is machine-readable and used by the git hook.
+Relay the reporter's full output to the user. The final line `COMMIT_VERDICT: PASS` or `COMMIT_VERDICT: BLOCK` is machine-readable and used by the git hook.
 
 ### Step 4: Documentation Update
 

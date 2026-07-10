@@ -55,6 +55,7 @@ PR opened → PR summary generated automatically
 | `perf-analyzer` | `.claude/agents/perf-analyzer.md` | N+1, memory leaks, hot path issues |
 | `db-migration-guardian` | `.claude/agents/db-migration-guardian.md` | Migration safety: blocking ops, missing rollbacks |
 | `remediation-agent` | `.claude/agents/remediation-agent.md` | Fix suggestions for blocked commits |
+| `review-reporter` | `.claude/agents/review-reporter.md` | Synthesizes review agent findings into verdicts — owns suppression, dedup, and the hook-parsed COMMIT_VERDICT/PUSH_VERDICT output |
 | `scaffolding-agent` | `.claude/agents/scaffolding-agent.md` | Feature boilerplate matching project conventions |
 | `code-writer` | `.claude/agents/code-writer.md` | Complete production-ready implementations — rate limiting, auth, validation, pagination, transactions, audit trail all written |
 | `doc-keeper` | `.claude/agents/doc-keeper.md` | README and CHANGELOG maintenance |

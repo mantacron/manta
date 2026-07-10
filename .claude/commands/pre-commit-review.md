@@ -15,15 +15,7 @@ bash scripts/build-project-map.sh 2>/dev/null || true
 
 Read `.manta-cache/project-map.json` if it exists. This gives you `high_risk_files`, `migration_files`, `entry_points`, and `stack`. Share this context with agents so they don't re-scan the repo.
 
-### Step 1: Load suppressions
-
-```bash
-cat .mantaignore 2>/dev/null
-```
-
-If `.mantaignore` exists, parse its suppression rules (skip comment lines starting with `#` and blank lines). Store them — before adding any finding to the output, check if the finding's file path matches the glob and the issue description/title contains the keyword. If it matches, silently skip that finding.
-
-### Step 2: Shallow pre-scan (fast signal detection)
+### Step 1: Shallow pre-scan (fast signal detection)
 
 Run the shallow scanner before invoking any agents:
 
@@ -38,7 +30,7 @@ Parse the output:
 - `SENTINEL_MODE: SHALLOW|DEEP` — pass this to security-sentinel directly
 - `SKIP_DB_GUARDIAN: true` — skip db-migration-guardian (no migration files staged)
 
-### Step 3: Get staged changes
+### Step 2: Get staged changes
 
 ```bash
 git diff --cached --name-only
@@ -47,7 +39,7 @@ git diff --cached
 
 If there are no staged changes, output `COMMIT_VERDICT: PASS` and exit.
 
-### Step 4: Agent timeout budgets
+### Step 3: Agent timeout budgets
 
 | Agent | Timeout | Rationale |
 |-------|---------|-----------|
@@ -59,9 +51,9 @@ If there are no staged changes, output `COMMIT_VERDICT: PASS` and exit.
 
 TIMEOUT agents are noted but do not block the commit.
 
-### Step 5: Run agents in parallel
+### Step 4: Run agents in parallel
 
-Use the Agent tool to run these agents simultaneously, applying trigger routing from Step 2:
+Use the Agent tool to run these agents simultaneously, applying trigger routing from Step 1:
 
 - **security-sentinel**: Always run. Pass `SENTINEL_MODE` from shallow scan.
 - **code-quality**: Always run. CRITICAL issues only (skip INFO).
@@ -70,53 +62,24 @@ Use the Agent tool to run these agents simultaneously, applying trigger routing 
 
 Provide project map context to each agent.
 
-### Step 6: Output structured result
+### Step 5: Delegate synthesis to review-reporter
 
-Output EXACTLY in this format (the git hook parses this):
+Do **not** apply suppressions, deduplicate findings, or assemble the verdict yourself — that logic lives in one place: the `review-reporter` agent (`.claude/agents/review-reporter.md`).
 
-```
-=== CLAUDE PRE-COMMIT REVIEW ===
+Invoke `review-reporter` via the Agent tool with:
+- **Mode**: `commit`
+- The full raw output of every agent that ran, plus each agent's status (`PASS`/`WARN`/`BLOCK`/`SKIP`/`TIMEOUT`)
+- The staged file list from Step 2
+- The `SHALLOW_SCAN:` / `SENTINEL_MODE:` lines from Step 1 (echoed into the output)
+- Which agents were skipped and why
 
-STAGED FILES:
-[list of staged files]
+The reporter applies `.mantaignore` + inline `manta-ignore` suppressions, deduplicates, and returns the complete `=== CLAUDE PRE-COMMIT REVIEW ===` block ending in the `COMMIT_VERDICT:` line.
 
-SHALLOW SCAN:
-[CLEAN|SIGNALS_FOUND] — [N signals: N secrets, N injection, N crypto]
-SENTINEL_MODE: [SHALLOW|DEEP]
+### Step 6: Relay the verdict
 
-AGENT RESULTS:
-security-sentinel: [PASS|WARN|BLOCK|TIMEOUT]
-code-quality: [PASS|WARN|BLOCK|TIMEOUT]
-perf-analyzer: [PASS|WARN|BLOCK|TIMEOUT]
-db-migration-guardian: [PASS|WARN|BLOCK|SKIP|TIMEOUT]
+Output the review-reporter's result **verbatim** as your final output — the git hook parses it. Do not add anything after the verdict lines.
 
-CRITICAL ISSUES:
-[If any CRITICAL findings from any agent, list them here numbered]
-[Format: N. [AGENT] [file:line] — [issue description]]
-[If none: "None"]
-
-WARNINGS:
-[If any WARNING findings, list numbered]
-[If none: "None"]
-
-=== END REVIEW ===
-
-COMMIT_VERDICT: PASS
-```
-
-OR if there are critical issues:
-
-```
-COMMIT_VERDICT: BLOCK
-BLOCK_REASON: [N critical issues found — see above]
-```
-
-OR if there are warnings but no critical issues:
-
-```
-COMMIT_VERDICT: WARN
-BLOCK_REASON: [N warnings found — see above]
-```
+If review-reporter fails or times out, fail open with maximum visibility: output the raw agent statuses, then `COMMIT_VERDICT: WARN` and `BLOCK_REASON: review-reporter unavailable — findings not synthesized, review manually`.
 
 ### Rules
 
@@ -128,5 +91,4 @@ BLOCK_REASON: [N warnings found — see above]
 - The last two lines must always be `COMMIT_VERDICT: PASS`, `COMMIT_VERDICT: BLOCK`, or `COMMIT_VERDICT: WARN` followed by `BLOCK_REASON`
 - Do not ask questions — this is non-interactive
 - Do not offer test generation — that's for the interactive `/review` command
-- Before reporting any finding, check `.mantaignore` if it exists — suppress any finding matching a rule in that file
 - Use the project map to prioritize high_risk_files for deeper review
