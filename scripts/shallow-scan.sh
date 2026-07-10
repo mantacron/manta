@@ -1,18 +1,41 @@
 #!/usr/bin/env bash
 # Shallow pre-scan — runs in ~2-5 seconds before full agent review.
-# Checks staged changes for high-signal security and quality patterns.
+# Checks a diff for high-signal security and quality patterns, plus the
+# routing signals (migrations, API routes, new symbols) that decide which
+# agents run. This is the single home of these detection regexes — the
+# pre-commit and pre-push orchestrators both read this script's output
+# instead of keeping their own divergent copies.
 # Outputs a structured signal report; exits 0 (clean) or 1 (signals found).
+# Also persists all signals to .manta-cache/scan-signals.env for reuse.
 #
-# Usage: bash scripts/shallow-scan.sh [--diff "git diff output"] [--files "file list"]
-# Called by pre-commit hook before invoking Claude agents.
+# Usage:
+#   bash scripts/shallow-scan.sh                          # staged diff (pre-commit)
+#   bash scripts/shallow-scan.sh --range REMOTE..LOCAL    # branch diff (pre-push)
 
 set -euo pipefail
 
-# ─── Collect staged diff ──────────────────────────────────────────────────────
-STAGED_DIFF=$(git diff --cached 2>/dev/null || echo "")
-STAGED_FILES=$(git diff --cached --name-only 2>/dev/null || echo "")
+# ─── Parse args ───────────────────────────────────────────────────────────────
+DIFF_RANGE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --range) DIFF_RANGE="${2:-}"; shift 2 ;;
+    *) shift ;;
+  esac
+done
 
-if [[ -z "$STAGED_DIFF" ]]; then
+CACHE_DIR=".manta-cache"
+SIGNALS_FILE="$CACHE_DIR/scan-signals.env"
+
+# ─── Collect diff ─────────────────────────────────────────────────────────────
+if [[ -n "$DIFF_RANGE" ]]; then
+  SCAN_DIFF=$(git diff "$DIFF_RANGE" 2>/dev/null || echo "")
+  SCAN_FILES=$(git diff "$DIFF_RANGE" --name-only 2>/dev/null || echo "")
+else
+  SCAN_DIFF=$(git diff --cached 2>/dev/null || echo "")
+  SCAN_FILES=$(git diff --cached --name-only 2>/dev/null || echo "")
+fi
+
+if [[ -z "$SCAN_DIFF" ]]; then
   echo "SHALLOW_SCAN: CLEAN"
   echo "SIGNALS: 0"
   exit 0
@@ -35,7 +58,7 @@ scan() {
   local counter_var="$3"
   local case_flag="${4:-}"
   local matches
-  matches=$(echo "$STAGED_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" | grep -E $case_flag -- "$pattern" | head -5 || true)
+  matches=$(echo "$SCAN_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" | grep -E $case_flag -- "$pattern" | head -5 || true)
   if [[ -n "$matches" ]]; then
     eval "$counter_var=\$((\$$counter_var + 1))"
     SIGNALS_DETAIL+="  [$label] $(echo "$matches" | head -2 | sed 's/^/    /')\n"
@@ -71,9 +94,19 @@ scan "CRYPTO" 'Digest::(MD5|SHA1)|MessageDigest\.getInstance\(["'"'"'](MD5|SHA-?
 scan "QUALITY" 'TODO|FIXME|HACK|XXX|NOSONAR' "QUALITY"
 
 # ─── Migration file detection ─────────────────────────────────────────────────
-MIGRATION_FILES=$(echo "$STAGED_FILES" | grep -E '(migration|migrate|schema\.prisma|\.sql$)' || true)
+MIGRATION_FILES=$(echo "$SCAN_FILES" | grep -E '(migration|migrate|schema\.prisma|\.sql$)' || true)
 HAS_MIGRATIONS=""
 [[ -n "$MIGRATION_FILES" ]] && HAS_MIGRATIONS="true"
+
+# ─── Routing signals: new API routes and new symbols ─────────────────────────
+# Used by pre-push to trigger-route observability-guardian and test-architect.
+ADDED_LINES=$(echo "$SCAN_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" || true)
+
+HAS_API_ROUTES=""
+echo "$ADDED_LINES" | grep -Eq "(router\.(get|post|put|delete|patch|use)\(|app\.(get|post|put|delete|patch|use)\(|@(Get|Post|Put|Delete|Patch|Route)\(|\.route\(|@app\.route|fastapi\.(get|post|put|delete)|express\.Router)" && HAS_API_ROUTES="true"
+
+HAS_NEW_SYMBOLS=""
+echo "$ADDED_LINES" | grep -Eq "^\+(def |async def |function |class |export (default |async )?function|public (static |async )?(void|[A-Z][a-zA-Z]+))" && HAS_NEW_SYMBOLS="true"
 
 # ─── Spec/constitution file presence ─────────────────────────────────────────
 HAS_SPEC=""
@@ -99,6 +132,12 @@ SKIP_SPEC_GUARDIAN="true"
 SKIP_COMPLIANCE="true"
 [[ -n "$HAS_CONSTITUTION" ]] && SKIP_COMPLIANCE="false"
 
+SKIP_OBSERVABILITY="true"
+[[ -n "$HAS_API_ROUTES" ]] && SKIP_OBSERVABILITY="false"
+
+SKIP_TEST_ARCHITECT="true"
+[[ -n "$HAS_NEW_SYMBOLS" ]] && SKIP_TEST_ARCHITECT="false"
+
 SENTINEL_MODE="SHALLOW"
 [[ $TOTAL_SIGNALS -gt 0 ]] && SENTINEL_MODE="DEEP"
 
@@ -118,9 +157,36 @@ echo "SENTINEL_MODE: $SENTINEL_MODE"
 echo "SKIP_DB_GUARDIAN: $SKIP_DB_GUARDIAN"
 echo "SKIP_SPEC_GUARDIAN: $SKIP_SPEC_GUARDIAN"
 echo "SKIP_COMPLIANCE: $SKIP_COMPLIANCE"
+echo "SKIP_OBSERVABILITY: $SKIP_OBSERVABILITY"
+echo "SKIP_TEST_ARCHITECT: $SKIP_TEST_ARCHITECT"
 echo "HAS_MIGRATIONS: ${HAS_MIGRATIONS:-false}"
 echo "HAS_SPEC: ${HAS_SPEC:-false}"
 echo "HAS_CONSTITUTION: ${HAS_CONSTITUTION:-false}"
+echo "HAS_API_ROUTES: ${HAS_API_ROUTES:-false}"
+echo "HAS_NEW_SYMBOLS: ${HAS_NEW_SYMBOLS:-false}"
+
+# ─── Persist signals for downstream reuse ─────────────────────────────────────
+mkdir -p "$CACHE_DIR" 2>/dev/null || true
+cat > "$SIGNALS_FILE" << EOF
+SCAN_GENERATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+SCAN_RANGE=${DIFF_RANGE:-staged}
+SIGNALS=$TOTAL_SIGNALS
+SECRETS=$SECRETS
+INJECTION=$INJECTION
+CRYPTO=$CRYPTO
+QUALITY=$QUALITY
+SENTINEL_MODE=$SENTINEL_MODE
+SKIP_DB_GUARDIAN=$SKIP_DB_GUARDIAN
+SKIP_SPEC_GUARDIAN=$SKIP_SPEC_GUARDIAN
+SKIP_COMPLIANCE=$SKIP_COMPLIANCE
+SKIP_OBSERVABILITY=$SKIP_OBSERVABILITY
+SKIP_TEST_ARCHITECT=$SKIP_TEST_ARCHITECT
+HAS_MIGRATIONS=${HAS_MIGRATIONS:-false}
+HAS_SPEC=${HAS_SPEC:-false}
+HAS_CONSTITUTION=${HAS_CONSTITUTION:-false}
+HAS_API_ROUTES=${HAS_API_ROUTES:-false}
+HAS_NEW_SYMBOLS=${HAS_NEW_SYMBOLS:-false}
+EOF
 
 if [[ -n "$SIGNALS_DETAIL" ]]; then
   echo ""

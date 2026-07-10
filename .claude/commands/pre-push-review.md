@@ -17,12 +17,13 @@ If there are no changes, output `PUSH_VERDICT: PASS` and exit.
 
 ### Step 2.5: Compute routing signals
 
+Run the shallow scanner against the branch diff — the detection regexes live in one place, `scripts/shallow-scan.sh`, not here:
+
 ```bash
-# Check for migration files in the diff
-HAS_MIGRATION_FILES=$(git diff $REMOTE_SHA $LOCAL_SHA --name-only | grep -E '(migration|migrate|schema\.prisma|\.sql$)' | head -1 || true)
+bash scripts/shallow-scan.sh --range "$REMOTE_SHA..$LOCAL_SHA" || true
 ```
 
-Set `SKIP_DB_GUARDIAN=true` if `$HAS_MIGRATION_FILES` is empty.
+Read `SKIP_DB_GUARDIAN` from its output (also persisted to `.manta-cache/scan-signals.env`): `true` means no migration files in the diff.
 
 ### Step 3: Run agents in parallel
 

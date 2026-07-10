@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Build a lightweight project relationship map from source files.
-# Cached per git commit hash — auto-invalidates when HEAD changes.
+# Cached per content hash (HEAD + index + working-tree state) — auto-invalidates
+# when anything is committed, staged, modified, added, or deleted. A HEAD-only
+# key is not enough: the map scans the working tree, so staged-but-uncommitted
+# files must bust the cache too.
 # Output: .manta-cache/project-map.json
 #
 # Usage: bash scripts/build-project-map.sh [--force]
@@ -16,7 +19,15 @@ FORCE="${1:-}"
 mkdir -p "$CACHE_DIR"
 
 # ─── Cache check ─────────────────────────────────────────────────────────────
-CURRENT_HASH=$(git rev-parse HEAD 2>/dev/null || echo "no-git")
+if git rev-parse HEAD >/dev/null 2>&1; then
+  # ls-files -s covers staged blob hashes; status --porcelain covers adds,
+  # deletes, renames, and untracked names (minus our own cache dir, which would
+  # otherwise bust the cache the moment it's written); git diff covers unstaged edits.
+  CURRENT_HASH=$({ git rev-parse HEAD; git ls-files -s; git status --porcelain | { grep -v "$CACHE_DIR" || true; }; git diff; } 2>/dev/null | sha256sum | cut -d' ' -f1)
+else
+  CURRENT_HASH="no-git"
+fi
+COMMIT_SHA=$(git rev-parse HEAD 2>/dev/null || echo "no-git")
 
 if [[ "$FORCE" != "--force" ]] && [[ -f "$MAP_FILE" ]] && [[ -f "$HASH_FILE" ]]; then
   CACHED_HASH=$(cat "$HASH_FILE" 2>/dev/null || echo "")
@@ -120,7 +131,7 @@ def to_list(s):
 
 data = {
     "generated_at": "$TIMESTAMP",
-    "commit": "$CURRENT_HASH",
+    "commit": "$COMMIT_SHA",
     "stack": "$STACK_LANGS".strip().split(),
     "file_count": int("$FILE_COUNT") if "$FILE_COUNT".isdigit() else 0,
     "entry_points":    to_list("""$ENTRY_POINTS"""),
