@@ -148,7 +148,7 @@ mkdir -p "$GIT_ROOT/reports"
   printf "**Commits scanned**: \`%s\` → \`%s\`\n\n" \
     "$(echo "$REMOTE_SHA" | cut -c1-7)" "$(echo "$LOCAL_SHA" | cut -c1-7)"
   printf "**Files scanned**: %s\n\n" "$FILE_COUNT"
-  printf "---\n\n"
+  printf '%s\n\n' "---"
   printf "%s\n" "$SCAN_OUTPUT"
 } > "$REPORT_FILE"
 echo -e "${CYAN}[manta]${RESET} Scan saved: ${REPORT_FILE}"
