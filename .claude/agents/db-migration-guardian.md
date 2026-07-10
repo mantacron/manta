@@ -36,7 +36,13 @@ If migration files found: read each one completely.
 
 ## Step 2: Detect Framework and Table Size Context
 
-Identify the migration framework from file paths and content:
+Check the shared project map before scanning — its `migration_files` and `db_files` lists show the project's full migration history and ORM layout, which makes framework inference immediate:
+
+```bash
+bash scripts/build-project-map.sh 2>/dev/null || cat .manta-cache/project-map.json 2>/dev/null || true
+```
+
+Identify the migration framework from file paths and content (fall back to inference from the staged files alone if the map is unavailable):
 - `prisma/migrations/*.sql` → Prisma
 - `alembic/versions/*.py` → Alembic (Python/SQLAlchemy)
 - `*/migrations/00*.py` → Django

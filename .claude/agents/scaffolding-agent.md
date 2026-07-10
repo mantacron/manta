@@ -52,20 +52,27 @@ Patterns source: manta.patterns.json | PATTERNS.md (N sections filled) | inferre
 
 ## Step 1: Understand the Stack
 
-Read project config to detect:
+Load the shared project map first — it already has the stack, API files, DB files, and test files classified, so you don't re-scan the repo:
+
 ```bash
-# Detect stack
-ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null | head -3
+bash scripts/build-project-map.sh 2>/dev/null || cat .manta-cache/project-map.json 2>/dev/null || true
 ```
 
-Read the detected config file (first 40 lines only — you need dependencies, not the whole file).
+Use its `stack` field for language detection and read the matching config file (first 40 lines only — you need dependencies, not the whole file). If the map is unavailable, fall back to self-detection:
+
+```bash
+# Fallback: detect stack
+ls package.json pyproject.toml go.mod Cargo.toml pom.xml 2>/dev/null | head -3
+```
 
 ## Step 2: Find the Pattern Donor
 
 Search for the most similar existing feature. Be specific — if the feature is "an endpoint", find an existing endpoint. If it's "a background job", find an existing job.
 
+Start from the project map's classified lists — `api_files` for endpoint donors, `db_files` for model/entity donors, `test_files` for the matching test. Only fall back to scanning if the map is unavailable or has no candidates:
+
 ```bash
-# Find similar files — look at structure, not content
+# Fallback: find similar files — look at structure, not content
 # For a REST endpoint:
 find . -name "*.ts" -o -name "*.py" -o -name "*.go" | grep -v node_modules | grep -v vendor | grep -v dist | xargs grep -l "router\.\|app\.\|@app\.\|http\.Handle" 2>/dev/null | head -5
 

@@ -44,6 +44,14 @@ find . -type f \( -name "*.routes.ts" -o -name "*.router.ts" -o -name "*.control
 
 ## Step 1 — Stack Detection
 
+Load the shared project map first — its `stack`, `entry_points`, `api_files`, `db_files`, `migration_files`, and `test_files` fields are your starting inventory, so you don't re-discover them file by file:
+
+```bash
+bash scripts/build-project-map.sh 2>/dev/null || cat .manta-cache/project-map.json 2>/dev/null || true
+```
+
+The map gives languages and file classifications only. The framework-level detail below (Express vs FastAPI, ORM, frontend) is still yours to detect. If the map is unavailable, self-detect everything.
+
 Read the config files and determine:
 - **Languages**: TypeScript, Python, Go, Rust, Ruby, Java, etc.
 - **Framework**: Express, Next.js, FastAPI, Django, Gin, Fiber, Rails, Spring, etc.
