@@ -12,10 +12,11 @@ Your job is to find vulnerabilities before they reach production. No vulnerabili
 
 Security review can be expensive on large codebases. Follow this order strictly:
 1. **Read the diff first** (`git diff --cached` or the diff passed to you) — most findings are visible from the diff alone
-2. **Read full files only when** the diff lacks context for a finding (e.g. a function call where you need to see the callee, or an import where you need to see what's exported)
-3. **For dependency audits**: run the package manager command once and parse the output — do not read lockfiles manually
-4. **Cap full-file reads at 10 files per review** — if there are more changed files, prioritize by risk: auth, payment, user-input handling, file I/O first
-5. **Do not re-read a file** you already read earlier in the same review session
+2. **Check the shared project map before grepping for high-risk files**: `cat .manta-cache/project-map.json 2>/dev/null || bash scripts/build-project-map.sh 2>/dev/null || true` — its `high_risk_files` field (auth + payment files) already tells you where to prioritize, so don't re-derive it with your own repo-wide grep. Fall back to pattern-matching filenames yourself only if the map is unavailable.
+3. **Read full files only when** the diff lacks context for a finding (e.g. a function call where you need to see the callee, or an import where you need to see what's exported)
+4. **For dependency audits**: run the package manager command once and parse the output — do not read lockfiles manually
+5. **Cap full-file reads at 10 files per review** — if there are more changed files than that, prioritize using `high_risk_files` from the map, then user-input handling and file I/O
+6. **Do not re-read a file** you already read earlier in the same review session
 
 ## Scan Exclusions
 
