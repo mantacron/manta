@@ -258,6 +258,20 @@ run_hook_push push-pass.txt; ec=$?
 [[ $ec -eq 0 ]] && log_ok "pre-push PASS → exit 0" \
                 || log_fail "pre-push PASS exited $ec, expected 0"
 
+# Fail-closed regression guard: an unparseable/missing verdict must BLOCK, not
+# silently pass. pre-push previously had a bug where any output lacking
+# "PUSH_VERDICT: BLOCK"/"WARN" fell through to the PASS branch — including
+# garbage with no verdict at all.
+printf 'garbage output, no verdict line at all\n' > "$HOOK_TMP/verdicts/garbage.txt"
+
+run_hook_commit garbage.txt; ec=$?
+[[ $ec -eq 1 ]] && log_ok "pre-commit unparseable verdict → exit 1 (fail-closed)" \
+                || log_fail "pre-commit unparseable verdict exited $ec, expected 1 (fail-closed regression)"
+
+run_hook_push garbage.txt; ec=$?
+[[ $ec -eq 1 ]] && log_ok "pre-push unparseable verdict → exit 1 (fail-closed)" \
+                || log_fail "pre-push unparseable verdict exited $ec, expected 1 — previously fell through to PASS"
+
 ( cd "$HOOK_TMP/repo" && SKIP_CLAUDE_REVIEW=1 bash "$ROOT/.githooks/pre-commit" ) > /dev/null 2>&1; ec=$?
 [[ $ec -eq 0 ]] && log_ok "SKIP_CLAUDE_REVIEW=1 bypasses pre-commit (exit 0)" \
                 || log_fail "SKIP_CLAUDE_REVIEW=1 exited $ec, expected 0"

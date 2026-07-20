@@ -54,17 +54,27 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANTA_DIR="$(cd "$HOOK_DIR/.." && pwd)"
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
+# Logs a fail-closed event (timeout/error/unparseable verdict) to the same
+# audit trail as explicit SKIP bypasses — these are silent-gap conditions,
+# not intentional bypasses, and must be visible after the fact.
+log_review_failure() {
+  local reason="$1"
+  mkdir -p "$GIT_ROOT/reports"
+  printf "[%s] pre-commit review FAILED (%s) — commit BLOCKED, no verdict produced | branch: %s\n" \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$reason" \
+    "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
+    >> "$GIT_ROOT/reports/.bypass-log"
+}
+
 # ─── Config ───────────────────────────────────────────────────────────────────
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-120}"  # seconds before giving up (whole review)
 SKIP_VAR="SKIP_CLAUDE_REVIEW"
 
-# Per-agent timeouts (informational — enforced inside the review command)
-AGENT_TIMEOUT_SENTINEL="${AGENT_TIMEOUT_SENTINEL:-90}"
-AGENT_TIMEOUT_QUALITY="${AGENT_TIMEOUT_QUALITY:-45}"
-AGENT_TIMEOUT_PERF="${AGENT_TIMEOUT_PERF:-30}"
-AGENT_TIMEOUT_DB="${AGENT_TIMEOUT_DB:-20}"
-export AGENT_TIMEOUT_SENTINEL AGENT_TIMEOUT_QUALITY AGENT_TIMEOUT_PERF AGENT_TIMEOUT_DB
+# Per-agent timeout budgets are specified directly in pre-commit-review.md's
+# Step 3 table, which the orchestrating agent reads as part of the prompt —
+# not via env vars (there used to be dead AGENT_TIMEOUT_* exports here that
+# nothing ever read; removed to avoid the false impression they're tunable).
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
@@ -140,17 +150,27 @@ REVIEW_OUTPUT=$(
   run_ai_review "$AI_TOOL" "$REVIEW_PROMPT" "$HOOK_TIMEOUT"
 ) || CLAUDE_EXIT=$?
 
-# ─── Handle timeout or error ──────────────────────────────────────────────────
+# ─── Handle timeout or error (fail-closed) ────────────────────────────────────
+# A review that didn't finish can't vouch for the commit — treat it the same
+# as a BLOCK, not a PASS. Bypass must be explicit (SKIP_CLAUDE_REVIEW=1) so the
+# gap is a visible, logged decision instead of a silent default.
 if [[ $CLAUDE_EXIT -eq 124 ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Review timed out after ${HOOK_TIMEOUT}s — allowing commit"
-  echo "         Increase timeout: export CLAUDE_HOOK_TIMEOUT=180"
-  exit 0
+  log_review_failure "timeout after ${HOOK_TIMEOUT}s"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Review timed out after ${HOOK_TIMEOUT}s — commit BLOCKED (fail-closed)${RESET}"
+  echo "         The review did not complete, so it cannot clear this commit."
+  echo "         Raise the budget: export CLAUDE_HOOK_TIMEOUT=180"
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_REVIEW=1 git commit"
+  exit 1
 fi
 
 if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT"; then
-  echo -e "${YELLOW}[manta]${RESET} Review encountered an error — allowing commit"
+  log_review_failure "error: exit ${CLAUDE_EXIT}"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Review encountered an error — commit BLOCKED (fail-closed)${RESET}"
   echo "         Error: $REVIEW_OUTPUT" | head -5
-  exit 0
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_REVIEW=1 git commit"
+  exit 1
 fi
 
 # ─── Display review output ────────────────────────────────────────────────────
@@ -213,8 +233,12 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: PASS"; then
   exit 0
 
 else
-  # No clear verdict found — allow commit but warn
-  echo -e "${YELLOW}[manta]${RESET} Could not parse review verdict — allowing commit"
+  # Review ran but produced no parseable verdict — same fail-closed rule as
+  # timeout/error: an unreadable result is not a pass.
+  log_review_failure "unparseable verdict"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Review ran but produced no parseable verdict — commit BLOCKED (fail-closed)${RESET}"
   echo "         Run /review in Claude Code for a full interactive review"
-  exit 0
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_REVIEW=1 git commit"
+  exit 1
 fi

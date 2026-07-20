@@ -55,12 +55,32 @@ GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
-HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-180}"
+# Dedicated push budget (falls back to CLAUDE_HOOK_TIMEOUT for existing overrides)
+# so tuning the 4-agent commit timeout can't silently starve the push review.
+HOOK_TIMEOUT="${CLAUDE_PUSH_HOOK_TIMEOUT:-${CLAUDE_HOOK_TIMEOUT:-240}}"
 SKIP_VAR="SKIP_CLAUDE_PUSH_REVIEW"
+
+# Logs a fail-closed event (timeout/error/unparseable verdict) to the same
+# audit trail as explicit SKIP bypasses — these are silent-gap conditions,
+# not intentional bypasses, and must be visible after the fact.
+log_review_failure() {
+  local reason="$1"
+  mkdir -p "$GIT_ROOT/reports"
+  printf "[%s] pre-push review FAILED (%s) — push BLOCKED, no verdict produced | branch: %s | commits: %s → %s\n" \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$reason" \
+    "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
+    "${REMOTE_SHA:-unknown}" "${LOCAL_SHA:-unknown}" \
+    >> "$GIT_ROOT/reports/.bypass-log"
+}
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Push review skipped (${SKIP_VAR}=1)"
+  echo -e "${YELLOW}[manta]${RESET} Push review skipped (${SKIP_VAR}=1) — logging bypass"
+  mkdir -p "$GIT_ROOT/reports"
+  printf "[%s] pre-push review bypassed via %s=1 | branch: %s\n" \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$SKIP_VAR" \
+    "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
+    >> "$GIT_ROOT/reports/.bypass-log"
   exit 0
 fi
 
@@ -122,15 +142,26 @@ SCAN_OUTPUT=$(
   run_ai_review "$AI_TOOL" "$PROMPT" "$HOOK_TIMEOUT"
 ) || CLAUDE_EXIT=$?
 
-# ─── Handle errors ────────────────────────────────────────────────────────────
+# ─── Handle errors (fail-closed) ──────────────────────────────────────────────
+# A review that didn't finish can't vouch for the push — treat it the same as
+# a BLOCK, not a PASS. Bypass must be explicit (SKIP_CLAUDE_PUSH_REVIEW=1) so
+# the gap is a visible, logged decision instead of a silent default.
 if [[ $CLAUDE_EXIT -eq 124 ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Push review timed out — allowing push"
-  exit 0
+  log_review_failure "timeout after ${HOOK_TIMEOUT}s"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Push review timed out after ${HOOK_TIMEOUT}s — push BLOCKED (fail-closed)${RESET}"
+  echo "         The review did not complete, so it cannot clear this push."
+  echo "         Raise the budget: export CLAUDE_PUSH_HOOK_TIMEOUT=360"
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_PUSH_REVIEW=1 git push"
+  exit 1
 fi
 
 if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT"; then
-  echo -e "${YELLOW}[manta]${RESET} Push review error — allowing push"
-  exit 0
+  log_review_failure "error: exit ${CLAUDE_EXIT}"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Push review error — push BLOCKED (fail-closed)${RESET}"
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_PUSH_REVIEW=1 git push"
+  exit 1
 fi
 
 # ─── Display output ───────────────────────────────────────────────────────────
@@ -187,8 +218,18 @@ elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: WARN"; then
   echo ""
   exit 1
 
-else
+elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: PASS"; then
   echo -e "${GREEN}${BOLD}✅ Review passed — pushing${RESET}"
   echo ""
   exit 0
+
+else
+  # Previously this branch treated ANY output lacking "PUSH_VERDICT: BLOCK" or
+  # "WARN" as a pass — including malformed output that never printed a verdict
+  # at all. Fail-closed instead: no parseable PUSH_VERDICT is not a pass.
+  log_review_failure "unparseable verdict"
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Review ran but produced no parseable PUSH_VERDICT — push BLOCKED (fail-closed)${RESET}"
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_PUSH_REVIEW=1 git push"
+  exit 1
 fi
