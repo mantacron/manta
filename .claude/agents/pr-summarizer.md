@@ -1,6 +1,7 @@
 ---
 name: pr-summarizer
 description: Generates comprehensive PR summaries after all automated tests pass. Analyzes the full diff against the base branch, describes what changed and why, identifies breaking changes, lists test coverage, and flags anything a reviewer should pay special attention to.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

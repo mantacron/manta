@@ -19,6 +19,8 @@ RESET='\033[0m'
 # ─── AI tool detection ────────────────────────────────────────────────────────
 # Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
 # Override with: AI_BIN=gemini git push
+# Model override: MANTA_MODEL=opus git commit|push (default: sonnet — review agents pin
+# their own models in frontmatter; this only sets the orchestrator's model)
 # Legacy override: CLAUDE_BIN=claude git push
 
 detect_ai_tool() {
@@ -39,7 +41,7 @@ run_ai_review() {
   local prompt="$2"
   local hook_timeout="${3:-180}"
   case "$tool" in
-    claude) timeout "$hook_timeout" claude --print "$prompt" 2>&1 ;;
+    claude) timeout "$hook_timeout" claude --print --model "${MANTA_MODEL:-sonnet}" "$prompt" 2>&1 ;;
     codex)  timeout "$hook_timeout" codex -q "$prompt" 2>&1 ;;
     gemini) timeout "$hook_timeout" gemini -p "$prompt" 2>&1 ;;
     *)      return 1 ;;

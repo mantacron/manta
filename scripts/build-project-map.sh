@@ -120,6 +120,38 @@ STACK_LANGS=""
 [[ -f "Cargo.toml" ]] && STACK_LANGS+="rust "
 [[ -f "pom.xml" || -f "build.gradle" ]] && STACK_LANGS+="java "
 
+# ─── Infra/architecture detection ────────────────────────────────────────────
+# Mirrors zero-trust-guardian.md Step 1 — computed once here (cached, invalidates
+# with the same content hash as everything else) instead of every agent re-running
+# these full-repo greps from scratch on every push.
+YAML_FILES=$(find . -type f \( -name "*.yaml" -o -name "*.yml" \) \
+  | grep -vE "/(${EXCLUDE_DIRS})/" 2>/dev/null || true)
+
+K8S_MANIFESTS=$(echo "$YAML_FILES" | xargs grep -l "kind: " 2>/dev/null || true)
+
+SERVICE_MESH_FILES=$(echo "$YAML_FILES" | xargs grep -l \
+  "PeerAuthentication\|AuthorizationPolicy\|DestinationRule\|linkerd.io\|istio.io" 2>/dev/null || true)
+
+AWS_IAM_FILES=$(find . -type f \( -name "*.json" -o -name "*.tf" -o -name "*.yaml" -o -name "*.yml" \) \
+  | grep -vE "/(${EXCLUDE_DIRS})/" \
+  | xargs grep -l '"Effect".*"Allow"\|aws_iam_policy\|aws_iam_role' 2>/dev/null || true)
+
+GCP_IAM_FILES=$(find . -type f \( -name "*.tf" -o -name "*.yaml" -o -name "*.yml" \) \
+  | grep -vE "/(${EXCLUDE_DIRS})/" \
+  | xargs grep -l "google_project_iam\|roles/\|gcloud iam" 2>/dev/null || true)
+
+DOCKER_COMPOSE_FILES=$(find . -maxdepth 2 -type f -name "docker-compose*" 2>/dev/null || true)
+
+MULTI_SERVICE_FILES=$(find . -maxdepth 2 -type f \
+  \( -name "docker-compose*" -o -name "Tiltfile" -o -name "skaffold.yaml" \) 2>/dev/null || true)
+
+INFRA_TIERS=""
+[[ -n "$K8S_MANIFESTS" ]] && INFRA_TIERS+="kubernetes "
+[[ -n "$SERVICE_MESH_FILES" ]] && INFRA_TIERS+="service_mesh "
+[[ -n "$AWS_IAM_FILES" ]] && INFRA_TIERS+="aws_iam "
+[[ -n "$GCP_IAM_FILES" ]] && INFRA_TIERS+="gcp_iam "
+[[ -n "$MULTI_SERVICE_FILES" ]] && INFRA_TIERS+="multi_service "
+
 # ─── Write JSON ───────────────────────────────────────────────────────────────
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -142,6 +174,15 @@ data = {
     "db_files":        to_list("""$DB_FILES"""),
     "migration_files": to_list("""$MIGRATION_FILES"""),
     "test_files":      to_list("""$TEST_FILES"""),
+    "infra": {
+        "tiers_detected":        "$INFRA_TIERS".strip().split(),
+        "kubernetes_manifests":  to_list("""$K8S_MANIFESTS"""),
+        "service_mesh_files":    to_list("""$SERVICE_MESH_FILES"""),
+        "aws_iam_files":         to_list("""$AWS_IAM_FILES"""),
+        "gcp_iam_files":         to_list("""$GCP_IAM_FILES"""),
+        "docker_compose_files":  to_list("""$DOCKER_COMPOSE_FILES"""),
+        "multi_service_files":   to_list("""$MULTI_SERVICE_FILES"""),
+    },
 }
 
 print(json.dumps(data, indent=2))

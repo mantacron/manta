@@ -34,10 +34,12 @@ Parse the output:
 
 ```bash
 git diff --cached --name-only
-git diff --cached
+git diff --cached --stat
 ```
 
 If there are no staged changes, output `COMMIT_VERDICT: PASS` and exit.
+
+**Token efficiency — do not load the diff body yourself.** The file list and stat are all the orchestrator needs for routing. Each review agent runs `git diff --cached` in its own context; pasting the diff into this context or into agent prompts tokenizes it once per agent on top of the agent's own read.
 
 ### Step 3: Agent timeout budgets
 
@@ -60,7 +62,7 @@ Use the Agent tool to run these agents simultaneously, applying trigger routing 
 - **perf-analyzer**: Always run. CRITICAL issues only.
 - **db-migration-guardian**: Run only if `SKIP_DB_GUARDIAN: false` (migration files staged).
 
-Provide project map context to each agent.
+Provide project map context to each agent. Keep each agent prompt lean: the staged file list, routing flags (`SENTINEL_MODE`, severity filter), and the project-map fields — **never the diff body** (agents fetch it themselves).
 
 ### Step 5: Delegate synthesis to review-reporter
 

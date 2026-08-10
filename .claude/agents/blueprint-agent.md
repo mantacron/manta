@@ -1,6 +1,7 @@
 ---
 name: blueprint-agent
 description: Generates docs/BLUEPRINT.md — a living map of the project covering stack, architecture diagram, API inventory, DB schema ER diagram, backend module map, and frontend component tree. Works on existing codebases, spec-only projects, and both together (with drift detection).
+model: sonnet
 tools: Bash, Read, Write, Glob, Grep
 ---
 

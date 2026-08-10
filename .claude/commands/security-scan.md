@@ -2,6 +2,25 @@
 
 Run a security audit of the entire repository — secrets, injection vulnerabilities, and OWASP Top 10 checks.
 
+---
+
+## Review Depth
+
+Accepts `--depth=quick|standard|deep` (default: `standard`). Depth sets the **budget
+and rigor** of each agent — it does not change *which* agents run (that is trigger
+routing, decided separately).
+
+| Depth | Full-file reads/agent | Findings reported | Severities | Model override |
+|-------|----------------------|-------------------|------------|----------------|
+| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL only | `sonnet` for every agent |
+| `standard` | ≤15 | top 10 per severity | CRITICAL + WARNING | agent default (frontmatter) |
+| `deep` | ≤50, trace data flow across files | all findings, no truncation | CRITICAL + WARNING + INFO | `opus` for analysis agents |
+
+Pass the resolved caps into every agent prompt as `READ_CAP` and `FINDING_CAP`, and
+pass the model override (when the depth defines one) as the Agent tool's `model`
+parameter, which takes precedence over the agent's frontmatter.
+
+
 ## Instructions
 
 ### Step 1: Full codebase secrets scan

@@ -1,6 +1,7 @@
 ---
 name: code-quality
 description: Reviews code for quality issues including DRY violations, high cyclomatic complexity, poor naming, missing edge case handling, error handling gaps, dead code, and language-specific anti-patterns. Language-agnostic. Use on any code change.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 

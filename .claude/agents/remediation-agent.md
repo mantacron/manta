@@ -1,6 +1,7 @@
 ---
 name: remediation-agent
 description: Generates concrete, ready-to-apply fix suggestions for issues found by review agents. Reads only the flagged files and lines — never re-scans the full codebase. Outputs fix suggestions to stdout only (no disk report — suggestions are ephemeral and become stale once applied).
+model: sonnet
 tools: Read, Grep, Glob
 ---
 

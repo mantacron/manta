@@ -10,10 +10,12 @@ Runs 3–4 agents. security-sentinel, code-quality, and perf-analyzer always run
 
 ```bash
 git diff $REMOTE_SHA $LOCAL_SHA --name-only
-git diff $REMOTE_SHA $LOCAL_SHA
+git diff $REMOTE_SHA $LOCAL_SHA --stat
 ```
 
 If there are no changes, output `PUSH_VERDICT: PASS` and exit.
+
+**Token efficiency — do not load the diff body yourself.** The file list and stat are all the orchestrator needs for routing. Each review agent runs the diff command in its own context; pasting the diff here or into agent prompts tokenizes it once per agent on top of the agent's own read.
 
 ### Step 2.5: Compute routing signals
 
@@ -27,7 +29,7 @@ Read `SKIP_DB_GUARDIAN` from its output (also persisted to `.manta-cache/scan-si
 
 ### Step 3: Run agents in parallel
 
-Use the Agent tool to run the active agents simultaneously against the full branch diff. Apply trigger routing from Step 2.5.
+Use the Agent tool to run the active agents simultaneously against the full branch diff. Apply trigger routing from Step 2.5. Keep each agent prompt lean: the changed file list, the diff range (`$REMOTE_SHA..$LOCAL_SHA`), routing flags, and project-map fields — **never the diff body** (agents fetch it themselves).
 
 - **security-sentinel**: always run — full security check: secrets, injection, auth, OWASP Top 10
 - **code-quality**: always run — CRITICAL quality issues only (skip INFO)

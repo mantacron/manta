@@ -1,6 +1,7 @@
 ---
 name: perf-analyzer
 description: Detects performance issues in code changes: N+1 query patterns, missing database indexes, unnecessary re-renders, memory leaks, blocking operations in async contexts, inefficient algorithms, missing caching, and bundle size regressions. Use on backend, frontend, and data processing code changes.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

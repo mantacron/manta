@@ -48,28 +48,9 @@ PR opened → PR summary generated automatically
 
 ## Agent Reference
 
-| Agent | File | Scope |
-|-------|------|-------|
-| `security-sentinel` | `.claude/agents/security-sentinel.md` | OWASP Top 10, secrets, injection |
-| `code-quality` | `.claude/agents/code-quality.md` | DRY, complexity, naming, edge cases |
-| `perf-analyzer` | `.claude/agents/perf-analyzer.md` | N+1, memory leaks, hot path issues |
-| `db-migration-guardian` | `.claude/agents/db-migration-guardian.md` | Migration safety: blocking ops, missing rollbacks |
-| `remediation-agent` | `.claude/agents/remediation-agent.md` | Fix suggestions for blocked commits |
-| `review-reporter` | `.claude/agents/review-reporter.md` | Synthesizes review agent findings into verdicts — owns suppression, dedup, and the hook-parsed COMMIT_VERDICT/PUSH_VERDICT output |
-| `scaffolding-agent` | `.claude/agents/scaffolding-agent.md` | Feature boilerplate matching project conventions |
-| `code-writer` | `.claude/agents/code-writer.md` | Complete production-ready implementations — rate limiting, auth, validation, pagination, transactions, audit trail all written |
-| `doc-keeper` | `.claude/agents/doc-keeper.md` | README and CHANGELOG maintenance |
-| `pr-summarizer` | `.claude/agents/pr-summarizer.md` | PR summary generation |
-| `blueprint-agent` | `.claude/agents/blueprint-agent.md` | Stack detection, API inventory, ER diagram, module map |
-| `ui-component-writer` | `.claude/agents/ui-component-writer.md` | Convert designs into responsive, accessible components |
-| `wiki-agent` | `.claude/agents/wiki-agent.md` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
-| `requirement-parser` | `.claude/agents/requirement-parser.md` | Parse REQUEST.md into structured requirements, complexity, and clarifying questions |
-| `product-manager` | `.claude/agents/product-manager.md` | Feature viability — user value, alignment, constitution compliance; Build/Defer/Decline |
-| `ux-planner` | `.claude/agents/ux-planner.md` | User journeys, component inventory, interaction states for RPI features |
-| `senior-software-engineer` | `.claude/agents/senior-software-engineer.md` | Feasibility + phased implementation (research and code execution) |
-| `technical-cto-advisor` | `.claude/agents/technical-cto-advisor.md` | GO / CONDITIONAL GO / DEFER / NO-GO with confidence score |
-| `constitutional-validator` | `.claude/agents/constitutional-validator.md` | Mission alignment, human oversight, data privacy, reversibility checks |
-| `documentation-analyst-writer` | `.claude/agents/documentation-analyst-writer.md` | Writes RESEARCH.md, pm.md, ux.md, eng.md, PLAN.md, IMPLEMENT.md |
+Agent definitions live in `.claude/agents/<name>.md` — that file is the agent's
+full prompt and the authority on its scope. `ls .claude/agents/` lists the set
+available in this install.
 
 ---
 
@@ -113,29 +94,12 @@ Agents read this at startup and update it after each run. Add new agents by crea
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/init` | **Start here** — new project wizard or existing codebase quick setup |
-| `/poc` | Fast POC setup — 3 questions → lightweight spec + project skeleton; no interview, no architecture phases |
-| `/audit [focus]` | Full codebase audit → `reports/YYYY-MM-DD-report.md` with score and quick wins |
-| `/review` | Full review of staged changes (4 agents) |
-| `/pre-commit-review` | Structured output for pre-commit git hook (4 agents: security, quality, perf, migrations) |
-| `/pre-push-review` | Structured output for pre-push git hook (3–4 agents: db-migration trigger-routed) |
-| `/generate-tests` | Interactive test generation for uncovered code |
-| `/update-docs` | Update README.md and CHANGELOG.md |
-| `/security-scan` | Full security audit (OWASP + secrets) |
-| `/blueprint` | Generate `docs/BLUEPRINT.md` — stack, API map, ER diagram, module map |
-| `/fix [--apply]` | AI fix suggestions for last blocked commit; `--apply` walks through each with Y/n and writes to files |
-| `/explain [target]` | Plain-language explanation of any file, function, or flow — callers, dependencies, execution path |
-| `/debt` | Harvest `// manta-defer:` annotations into a ledger; flags deferrals with no exit condition (NO-TRIGGER) |
-| `/scaffold "description"` | Generate feature boilerplate matching project conventions |
-| `/write "description"` | Write complete production-ready implementation — enterprise defaults (rate limiting, auth, validation, pagination, transactions) baked in |
-| `/ui [path or description]` | Convert designs into responsive, accessible, DRY-compliant components |
-| `/capture-patterns` | Scan codebase and auto-generate `PATTERNS.md` + `manta.patterns.json` |
-| `/wiki [--url=URL]` | Generate product wiki in `docs/wiki/` — route discovery, screenshots, feature analysis, spec comparison when SPEC.md exists |
-| `/rpi-research "slug"` | RPI Phase 1 — 6-agent GO/NO-GO gate → `rpi/{slug}/research/RESEARCH.md` |
-| `/rpi-plan "slug"` | RPI Phase 2 — UX, engineering plan, PLAN.md → `rpi/{slug}/plan/` |
-| `/rpi-implement "slug"` | RPI Phase 3 — phased implementation with gates → `rpi/{slug}/IMPLEMENT.md` |
+Command definitions live in `.claude/commands/<name>.md`; `ls .claude/commands/`
+lists them all.
+
+Everyday entry points: `/init` (setup) · `/audit` (health report) · `/review`
+(staged changes) · `/fix` (fix suggestions) · `/write` and `/scaffold` (codegen)
+· `/rpi-research`, `/rpi-plan`, `/rpi-implement` (feature workflow).
 
 ---
 
@@ -151,23 +115,15 @@ Agents read this at startup and update it after each run. Add new agents by crea
 
 ## Scan Exclusions
 
-**Always exclude these directories** from any file scan, grep, or find operation:
+**Always exclude these directories** from any file scan, grep, or find operation — dependency installs, build artifacts, and generated output, never source code:
+
+`node_modules` `vendor` `dist` `build` `out` `.next` `.nuxt` `.svelte-kit` `__pycache__` `.venv` `venv` `target` `.gradle` `Pods` `.build` `bower_components` `.yarn` `coverage` `.nyc_output` `.git` `reports`
 
 ```bash
-# For grep:
+# For grep — one flag covers the whole list:
 grep -r --exclude-dir={node_modules,vendor,dist,build,out,.next,.nuxt,.svelte-kit,__pycache__,.venv,venv,target,.gradle,Pods,.build,bower_components,.yarn,coverage,.nyc_output,.git,reports} ...
 
-# For find:
-find . -type f \
-  ! -path "*/node_modules/*" ! -path "*/vendor/*" \
-  ! -path "*/dist/*" ! -path "*/build/*" ! -path "*/out/*" \
-  ! -path "*/.next/*" ! -path "*/.nuxt/*" ! -path "*/.svelte-kit/*" \
-  ! -path "*/__pycache__/*" ! -path "*/.venv/*" ! -path "*/venv/*" \
-  ! -path "*/target/*" ! -path "*/.gradle/*" ! -path "*/Pods/*" \
-  ! -path "*/.build/*" ! -path "*/bower_components/*" ! -path "*/.yarn/*" \
-  ! -path "*/coverage/*" ! -path "*/.nyc_output/*" ! -path "*/.git/*" \
-  ! -path "*/reports/*" \
-  ...
+# For find — add ! -path "*/<dir>/*" for each directory in the list above
 ```
 
 ---

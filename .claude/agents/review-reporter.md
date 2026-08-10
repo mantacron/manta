@@ -1,6 +1,7 @@
 ---
 name: review-reporter
 description: Synthesizes raw findings from review agents into the final review verdict. Owns the canonical implementation of .mantaignore suppression, inline manta-ignore checks, and cross-agent deduplication. Produces the machine-readable COMMIT_VERDICT/PUSH_VERDICT blocks parsed by the git hooks (commit/push modes) or the full consolidated report (interactive mode). Used by /review, /pre-commit-review, and /pre-push-review after all review agents have run.
+model: opus
 tools: Read, Write, Bash, Glob
 ---
 

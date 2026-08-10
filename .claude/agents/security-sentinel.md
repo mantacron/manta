@@ -1,6 +1,7 @@
 ---
 name: security-sentinel
 description: Full security audit agent. Checks for OWASP Top 10 vulnerabilities, hardcoded secrets, vulnerable dependencies, injection flaws, broken authentication, insecure data exposure, SSRF, path traversal, and more. Use on any code change — always runs in pre-commit pipeline.
+model: opus
 tools: Read, Grep, Glob, Bash
 ---
 

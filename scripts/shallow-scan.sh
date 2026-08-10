@@ -108,6 +108,17 @@ echo "$ADDED_LINES" | grep -Eq "(router\.(get|post|put|delete|patch|use)\(|app\.
 HAS_NEW_SYMBOLS=""
 echo "$ADDED_LINES" | grep -Eq "^\+(def |async def |function |class |export (default |async )?function|public (static |async )?(void|[A-Z][a-zA-Z]+))" && HAS_NEW_SYMBOLS="true"
 
+# ─── Zero-trust surface detection ────────────────────────────────────────────
+# zero-trust-guardian has the largest agent prompt of the push set, so route it
+# like the others rather than running it on every push. Trigger on anything that
+# can move a trust boundary: IaC and orchestration manifests, IAM/RBAC/policy
+# files, service-mesh config, auth code, or new API routes — its universal check
+# is "auth on every endpoint", so new routes must still reach it.
+INFRA_FILES=$(echo "$SCAN_FILES" | grep -Ei '(dockerfile|docker-compose|\.tf$|\.tfvars$|(^|/)k8s/|(^|/)kubernetes/|(^|/)helm/|(chart|deployment|service|ingress|role|rolebinding)\.ya?ml$|iam|rbac|istio|linkerd|serviceaccount|\.github/workflows/)' || true)
+AUTH_FILES=$(echo "$SCAN_FILES" | grep -Ei '(auth|login|session|token|jwt|oauth|permission|policy|acl|middleware)' || true)
+HAS_ZERO_TRUST_SURFACE=""
+{ [[ -n "$INFRA_FILES" ]] || [[ -n "$AUTH_FILES" ]] || [[ -n "$HAS_API_ROUTES" ]]; } && HAS_ZERO_TRUST_SURFACE="true"
+
 # ─── Spec/constitution file presence ─────────────────────────────────────────
 HAS_SPEC=""
 { [[ -f "spec/SPEC.md" ]] || [[ -f "../spec/SPEC.md" ]]; } && HAS_SPEC="true"
@@ -138,6 +149,9 @@ SKIP_OBSERVABILITY="true"
 SKIP_TEST_ARCHITECT="true"
 [[ -n "$HAS_NEW_SYMBOLS" ]] && SKIP_TEST_ARCHITECT="false"
 
+SKIP_ZERO_TRUST="true"
+[[ -n "$HAS_ZERO_TRUST_SURFACE" ]] && SKIP_ZERO_TRUST="false"
+
 SENTINEL_MODE="SHALLOW"
 [[ $TOTAL_SIGNALS -gt 0 ]] && SENTINEL_MODE="DEEP"
 
@@ -159,11 +173,13 @@ echo "SKIP_SPEC_GUARDIAN: $SKIP_SPEC_GUARDIAN"
 echo "SKIP_COMPLIANCE: $SKIP_COMPLIANCE"
 echo "SKIP_OBSERVABILITY: $SKIP_OBSERVABILITY"
 echo "SKIP_TEST_ARCHITECT: $SKIP_TEST_ARCHITECT"
+echo "SKIP_ZERO_TRUST: $SKIP_ZERO_TRUST"
 echo "HAS_MIGRATIONS: ${HAS_MIGRATIONS:-false}"
 echo "HAS_SPEC: ${HAS_SPEC:-false}"
 echo "HAS_CONSTITUTION: ${HAS_CONSTITUTION:-false}"
 echo "HAS_API_ROUTES: ${HAS_API_ROUTES:-false}"
 echo "HAS_NEW_SYMBOLS: ${HAS_NEW_SYMBOLS:-false}"
+echo "HAS_ZERO_TRUST_SURFACE: ${HAS_ZERO_TRUST_SURFACE:-false}"
 
 # ─── Persist signals for downstream reuse ─────────────────────────────────────
 mkdir -p "$CACHE_DIR" 2>/dev/null || true
@@ -181,6 +197,7 @@ SKIP_SPEC_GUARDIAN=$SKIP_SPEC_GUARDIAN
 SKIP_COMPLIANCE=$SKIP_COMPLIANCE
 SKIP_OBSERVABILITY=$SKIP_OBSERVABILITY
 SKIP_TEST_ARCHITECT=$SKIP_TEST_ARCHITECT
+SKIP_ZERO_TRUST=$SKIP_ZERO_TRUST
 HAS_MIGRATIONS=${HAS_MIGRATIONS:-false}
 HAS_SPEC=${HAS_SPEC:-false}
 HAS_CONSTITUTION=${HAS_CONSTITUTION:-false}

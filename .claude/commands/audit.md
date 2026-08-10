@@ -8,6 +8,29 @@ If a focus is specified, run only the relevant agent. Otherwise run all.
 
 ---
 
+## Review Depth
+
+Accepts `--depth=quick|standard|deep` (default: `standard`). Depth sets the **budget
+and rigor** of each agent — it does not change *which* agents run (that is trigger
+routing, decided separately).
+
+| Depth | Full-file reads/agent | Findings reported | Severities | Model override |
+|-------|----------------------|-------------------|------------|----------------|
+| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL only | `sonnet` for every agent |
+| `standard` | ≤15 | top 10 per severity | CRITICAL + WARNING | agent default (frontmatter) |
+| `deep` | ≤50, trace data flow across files | all findings, no truncation | CRITICAL + WARNING + INFO | `opus` for analysis agents |
+
+Pass the resolved caps into every agent prompt as `READ_CAP` and `FINDING_CAP`, and
+pass the model override (when the depth defines one) as the Agent tool's `model`
+parameter, which takes precedence over the agent's frontmatter.
+
+`quick` is for triage — "is anything on fire?" — on large repos or in a tight loop.
+`deep` disables truncation and tells agents to follow data flow across file
+boundaries instead of stopping at the first grep hit; use it for release gates,
+quarterly audits, and compliance evidence. When in doubt, use `standard`.
+
+---
+
 ## Step 0 — Load Suppressions
 
 ```bash
@@ -35,6 +58,10 @@ find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.py" 
   2>/dev/null | wc -l
 
 ls reports/ 2>/dev/null | grep -E "report\.md$" | sort | tail -5
+
+# Shared project map — built once, passed to every agent
+bash scripts/build-project-map.sh 2>/dev/null || true
+cat .manta-cache/project-map.json 2>/dev/null
 ```
 
 Set internal variables:
@@ -63,7 +90,11 @@ Announce:
 
 ## Step 2 — Run Agents in Parallel
 
-Launch all applicable agents simultaneously as background tasks. Each agent receives the **full codebase**, not a git diff.
+Launch all applicable agents simultaneously as background tasks. Each agent audits the **full codebase**, not a git diff — but "full codebase" means full *scope*, not reading every file. Include this token budget in every agent prompt, along with the project-map JSON from Step 1:
+
+> **Token budget**: Use the provided project map (`high_risk_files`, `api_files`, `migration_files`, `entry_points`, `stack`) instead of re-discovering the repo. Grep for signal patterns first; read a file in full only when a grep hit needs surrounding context. Cap full-file reads at `READ_CAP` files — prioritize high_risk_files and entry points. Report at most the top `FINDING_CAP` findings per severity level, ranked by impact; summarize the rest as counts. Do not paste file contents into your findings — cite `file:line` instead.
+
+Substitute `READ_CAP` and `FINDING_CAP` with the values the resolved depth defines (see **Review Depth** above; `standard` = 15 and 10). At `--depth=deep`, drop the `FINDING_CAP` sentence entirely and instruct agents to trace data flow across file boundaries rather than stopping at the first grep hit.
 
 ### Always run (unless focus flag excludes them):
 

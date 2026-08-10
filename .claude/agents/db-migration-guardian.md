@@ -1,6 +1,7 @@
 ---
 name: db-migration-guardian
 description: Validates database migration safety before commit. Detects blocking operations on large tables, missing rollbacks, irreversible changes, unsafe NULL constraints, index creation without CONCURRENTLY, and breaking schema changes. Supports Prisma, Alembic, Django, Flyway, TypeORM, Sequelize, raw SQL, and Go Migrate. Only activates when migration files are staged.
+model: sonnet
 tools: Read, Grep, Glob, Bash
 ---
 

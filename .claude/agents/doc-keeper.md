@@ -1,6 +1,7 @@
 ---
 name: doc-keeper
 description: Maintains project documentation. Creates README.md if missing, updates it when the project changes, appends to CHANGELOG.md with structured entries, and identifies code that needs inline documentation. Run after successful commits and on demand.
+model: sonnet
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
