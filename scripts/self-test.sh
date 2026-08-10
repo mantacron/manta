@@ -272,14 +272,44 @@ run_hook_push garbage.txt; ec=$?
 [[ $ec -eq 1 ]] && log_ok "pre-push unparseable verdict → exit 1 (fail-closed)" \
                 || log_fail "pre-push unparseable verdict exited $ec, expected 1 — previously fell through to PASS"
 
+# Verdict-hijack regression guard: the verdict greps were unanchored, so a
+# finding that merely *quoted* the contract string decided the verdict. Reviewing
+# any repo that contains a review pipeline hit this — a clean PASS read as BLOCK.
+{
+  printf '=== CLAUDE PRE-COMMIT REVIEW ===\n'
+  printf 'CRITICAL ISSUES:\nNone\n'
+  printf 'WARNINGS:\n1. [code-quality] hooks.md:12 — docs quote COMMIT_VERDICT: BLOCK and COMMIT_VERDICT: WARN\n'
+  printf '=== END REVIEW ===\n'
+  printf 'COMMIT_VERDICT: PASS\n'
+} > "$HOOK_TMP/verdicts/commit-pass-quoting-verdicts.txt"
+
+run_hook_commit commit-pass-quoting-verdicts.txt; ec=$?
+[[ $ec -eq 0 ]] && log_ok "quoted verdict strings in findings do not hijack the verdict (PASS stays PASS)" \
+                || log_fail "pre-commit exited $ec on a PASS whose findings quote BLOCK/WARN — unanchored verdict grep regression"
+
+rm -f "$HOOK_TMP/repo/reports/.bypass-log"
 ( cd "$HOOK_TMP/repo" && SKIP_CLAUDE_REVIEW=1 bash "$ROOT/.githooks/pre-commit" ) > /dev/null 2>&1; ec=$?
-[[ $ec -eq 0 ]] && log_ok "SKIP_CLAUDE_REVIEW=1 bypasses pre-commit (exit 0)" \
-                || log_fail "SKIP_CLAUDE_REVIEW=1 exited $ec, expected 0"
+# The commit bypass used to exit silently while the push bypass was logged. That
+# asymmetry made the audit trail unusable as evidence, so assert it is recorded.
+if [[ $ec -eq 0 ]] && grep -q "pre-commit review bypassed" "$HOOK_TMP/repo/reports/.bypass-log" 2>/dev/null; then
+  log_ok "SKIP_CLAUDE_REVIEW=1 bypasses pre-commit (exit 0) and logs the bypass"
+else
+  log_fail "pre-commit bypass: exit $ec (expected 0), bypass-log entry $(grep -qs 'pre-commit review bypassed' "$HOOK_TMP/repo/reports/.bypass-log" && echo present || echo MISSING)"
+fi
 
 ( cd "$HOOK_TMP/repo" && SKIP_CLAUDE_PUSH_REVIEW=1 bash "$ROOT/.githooks/pre-push" \
     <<< "refs/heads/main $PUSH_HEAD refs/heads/main $PUSH_BASE" ) > /dev/null 2>&1; ec=$?
 [[ $ec -eq 0 ]] && log_ok "SKIP_CLAUDE_PUSH_REVIEW=1 bypasses pre-push (exit 0)" \
                 || log_fail "SKIP_CLAUDE_PUSH_REVIEW=1 exited $ec, expected 0"
+
+# The push bypass line used to record "unknown → unknown" because stdin was read
+# after the skip check — losing the commit range on the one record where it matters.
+if grep -q "pre-push review bypassed" "$HOOK_TMP/repo/reports/.bypass-log" 2>/dev/null \
+   && ! grep "pre-push review bypassed" "$HOOK_TMP/repo/reports/.bypass-log" | grep -q "commits: unknown → unknown"; then
+  log_ok "pre-push bypass records the real commit range, not unknown → unknown"
+else
+  log_fail "pre-push bypass line lost its SHAs — stdin must be read before the skip check"
+fi
 
 # ─── 7. Project-map classification and cache invalidation ─────────────────────
 log_step "Project-map classification (seeded fixture)"

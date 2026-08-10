@@ -62,39 +62,33 @@ CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 HOOK_TIMEOUT="${CLAUDE_PUSH_HOOK_TIMEOUT:-${CLAUDE_HOOK_TIMEOUT:-600}}"
 SKIP_VAR="SKIP_CLAUDE_PUSH_REVIEW"
 
-# Logs a fail-closed event (timeout/error/unparseable verdict) to the same
-# audit trail as explicit SKIP bypasses — these are silent-gap conditions,
-# not intentional bypasses, and must be visible after the fact.
-log_review_failure() {
-  local reason="$1"
-  mkdir -p "$GIT_ROOT/reports"
-  printf "[%s] pre-push review FAILED (%s) — push BLOCKED, no verdict produced | branch: %s | commits: %s → %s\n" \
-    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$reason" \
+# Every gap in review coverage lands here, in one format: explicit bypasses and
+# fail-closed conditions alike. Both mean a push went out without a verdict, so
+# both belong in the same audit trail. Kept as human-readable text on purpose —
+# the self-test, the e2e runner, and the docs treat this file as readable.
+log_bypass_event() {
+  local event="$1" detail="$2"
+  mkdir -p "$GIT_ROOT/reports" 2>/dev/null || true
+  printf "[%s] pre-push %s | branch: %s | commits: %s → %s%s\n" \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$event" \
     "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
     "${REMOTE_SHA:-unknown}" "${LOCAL_SHA:-unknown}" \
+    "${detail:+ | $detail}" \
     >> "$GIT_ROOT/reports/.bypass-log"
 }
 
-# ─── Skip check ───────────────────────────────────────────────────────────────
-if [[ "${!SKIP_VAR:-}" == "1" ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Push review skipped (${SKIP_VAR}=1) — logging bypass"
-  mkdir -p "$GIT_ROOT/reports"
-  printf "[%s] pre-push review bypassed via %s=1 | branch: %s\n" \
-    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$SKIP_VAR" \
-    "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
-    >> "$GIT_ROOT/reports/.bypass-log"
-  exit 0
-fi
-
-# ─── Check AI tool is available ───────────────────────────────────────────────
-if [[ -z "$AI_TOOL" ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Warning: no AI CLI found — skipping push review"
-  echo "         Install one of: claude (npm i -g @anthropic-ai/claude-code), codex (npm i -g @openai/codex), gemini (npm i -g @google/gemini-cli)"
-  exit 0
-fi
+log_review_failure() {
+  log_bypass_event "review FAILED — push BLOCKED, no verdict produced" "reason: $1"
+}
 
 # ─── Read push info from stdin ────────────────────────────────────────────────
 # Git passes: <local-ref> <local-sha> <remote-ref> <remote-sha>
+#
+# This runs BEFORE the skip check on purpose. It used to sit after it, so the
+# bypass log recorded every explicitly-bypassed push as "unknown → unknown" —
+# the one record where knowing the commit range matters most. Consuming stdin
+# and then exiting 0 is correct hook protocol; not consuming it is the riskier
+# behaviour.
 PUSH_INFO=$(cat)
 LOCAL_SHA=$(echo "$PUSH_INFO" | awk '{print $2}' | head -1)
 REMOTE_SHA=$(echo "$PUSH_INFO" | awk '{print $4}' | head -1)
@@ -104,6 +98,20 @@ if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
   # New branch — diff against main/master
   BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
   REMOTE_SHA=$(git merge-base "origin/$BASE_BRANCH" "$LOCAL_SHA" 2>/dev/null || echo "")
+fi
+
+# ─── Skip check ───────────────────────────────────────────────────────────────
+if [[ "${!SKIP_VAR:-}" == "1" ]]; then
+  echo -e "${YELLOW}[manta]${RESET} Push review skipped (${SKIP_VAR}=1) — logging bypass"
+  log_bypass_event "review bypassed via ${SKIP_VAR}=1" ""
+  exit 0
+fi
+
+# ─── Check AI tool is available ───────────────────────────────────────────────
+if [[ -z "$AI_TOOL" ]]; then
+  echo -e "${YELLOW}[manta]${RESET} Warning: no AI CLI found — skipping push review"
+  echo "         Install one of: claude (npm i -g @anthropic-ai/claude-code), codex (npm i -g @openai/codex), gemini (npm i -g @google/gemini-cli)"
+  exit 0
 fi
 
 if [[ -z "$REMOTE_SHA" ]]; then
@@ -158,7 +166,7 @@ if [[ $CLAUDE_EXIT -eq 124 ]]; then
   exit 1
 fi
 
-if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT"; then
+if [[ $CLAUDE_EXIT -ne 0 ]] && ! grep -qE '^[[:space:]]*PUSH_VERDICT:' <<<"$SCAN_OUTPUT"; then
   log_review_failure "error: exit ${CLAUDE_EXIT}"
   echo ""
   echo -e "${RED}${BOLD}[manta] Push review error — push BLOCKED (fail-closed)${RESET}"
@@ -172,7 +180,7 @@ echo ""
 
 # ─── Save scan to reports/ ────────────────────────────────────────────────────
 REPORT_DATE=$(date +%Y-%m-%d)
-REPORT_TIME=$(date +%H%M)
+REPORT_TIME=$(date +%H%M%S)   # seconds included: %H%M collided for two commits in one minute
 REPORT_FILE="$GIT_ROOT/reports/${REPORT_DATE}-${REPORT_TIME}-push-review.md"
 mkdir -p "$GIT_ROOT/reports"
 {
@@ -188,8 +196,20 @@ echo -e "${CYAN}[manta]${RESET} Scan saved: ${REPORT_FILE}"
 echo ""
 
 # ─── Parse verdict ────────────────────────────────────────────────────────────
-if echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: BLOCK"; then
-  BLOCK_REASON=$(echo "$SCAN_OUTPUT" | grep "BLOCK_REASON:" | sed 's/BLOCK_REASON: //' || echo "Critical issues found")
+# Resolve the verdict exactly once, from an anchored match on its own line.
+# An unanchored search matches the string anywhere in the output — including
+# inside a finding that happens to quote it, which is routine whenever the
+# reviewed code is itself a review pipeline. That turned a PASS into a BLOCK.
+# BLOCK_REASON takes the last match for the same reason.
+if   grep -qE '^[[:space:]]*PUSH_VERDICT: BLOCK' <<<"$SCAN_OUTPUT"; then VERDICT=BLOCK
+elif grep -qE '^[[:space:]]*PUSH_VERDICT: WARN'  <<<"$SCAN_OUTPUT"; then VERDICT=WARN
+elif grep -qE '^[[:space:]]*PUSH_VERDICT: PASS'  <<<"$SCAN_OUTPUT"; then VERDICT=PASS
+else VERDICT=""; fi
+
+VERDICT_REASON=$(grep -E '^[[:space:]]*BLOCK_REASON:' <<<"$SCAN_OUTPUT" | tail -1 | sed 's/^[[:space:]]*BLOCK_REASON: //' || true)
+
+if [[ "$VERDICT" == "BLOCK" ]]; then
+  BLOCK_REASON="${VERDICT_REASON:-Critical issues found}"
 
   echo ""
   echo -e "${RED}${BOLD}╔═══════════════════════════════════════════════════╗${RESET}"
@@ -204,8 +224,8 @@ if echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: BLOCK"; then
   echo ""
   exit 1
 
-elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: WARN"; then
-  BLOCK_REASON=$(echo "$SCAN_OUTPUT" | grep "BLOCK_REASON:" | sed 's/BLOCK_REASON: //' || echo "Warnings found")
+elif [[ "$VERDICT" == "WARN" ]]; then
+  BLOCK_REASON="${VERDICT_REASON:-Warnings found}"
 
   echo ""
   echo -e "${YELLOW}${BOLD}╔═══════════════════════════════════════════════════╗${RESET}"
@@ -220,7 +240,7 @@ elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: WARN"; then
   echo ""
   exit 1
 
-elif echo "$SCAN_OUTPUT" | grep -q "PUSH_VERDICT: PASS"; then
+elif [[ "$VERDICT" == "PASS" ]]; then
   echo -e "${GREEN}${BOLD}✅ Review passed — pushing${RESET}"
   echo ""
   exit 0

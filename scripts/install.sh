@@ -320,6 +320,7 @@ add_to_gitignore ".env.local"        "Local env overrides"
 add_to_gitignore ".claude/init-state.json" "Claude Code init session state"
 add_to_gitignore "reports/*-commit-review.md" "Manta hook logs"
 add_to_gitignore "reports/*-push-review.md"   "Manta hook logs"
+add_to_gitignore ".manta-cache/"     "Manta local cache (project map, scan signals)"
 
 # ─── Step 10: Configure git hooks path ────────────────────────────────────────
 log_step "Configuring git hooks path"

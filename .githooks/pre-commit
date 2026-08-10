@@ -56,16 +56,22 @@ HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MANTA_DIR="$(cd "$HOOK_DIR/.." && pwd)"
 GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 
-# Logs a fail-closed event (timeout/error/unparseable verdict) to the same
-# audit trail as explicit SKIP bypasses — these are silent-gap conditions,
-# not intentional bypasses, and must be visible after the fact.
-log_review_failure() {
-  local reason="$1"
-  mkdir -p "$GIT_ROOT/reports"
-  printf "[%s] pre-commit review FAILED (%s) — commit BLOCKED, no verdict produced | branch: %s\n" \
-    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$reason" \
+# Every gap in review coverage lands here, in one format: explicit bypasses and
+# fail-closed conditions alike. Both mean a commit happened without a verdict,
+# so both belong in the same audit trail. Kept as human-readable text on purpose
+# — the self-test, the e2e runner, and the docs treat this file as readable.
+log_bypass_event() {
+  local event="$1" detail="$2"
+  mkdir -p "$GIT_ROOT/reports" 2>/dev/null || true
+  printf "[%s] pre-commit %s | branch: %s%s\n" \
+    "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$event" \
     "$(git -C "$GIT_ROOT" branch --show-current 2>/dev/null || echo unknown)" \
+    "${detail:+ | $detail}" \
     >> "$GIT_ROOT/reports/.bypass-log"
+}
+
+log_review_failure() {
+  log_bypass_event "review FAILED — commit BLOCKED, no verdict produced" "reason: $1"
 }
 
 # ─── Config ───────────────────────────────────────────────────────────────────
@@ -85,7 +91,12 @@ SKIP_VAR="SKIP_CLAUDE_REVIEW"
 
 # ─── Skip check ───────────────────────────────────────────────────────────────
 if [[ "${!SKIP_VAR:-}" == "1" ]]; then
-  echo -e "${YELLOW}[manta]${RESET} Review skipped (${SKIP_VAR}=1)"
+  # An explicit bypass is a legitimate escape hatch, but it must leave a trace.
+  # This branch used to exit silently, so commit-level bypasses were invisible
+  # while push-level ones were logged — the one asymmetry that made the audit
+  # trail unusable as evidence.
+  echo -e "${YELLOW}[manta]${RESET} Review skipped (${SKIP_VAR}=1) — logging bypass"
+  log_bypass_event "review bypassed via ${SKIP_VAR}=1" ""
   exit 0
 fi
 
@@ -171,7 +182,7 @@ if [[ $CLAUDE_EXIT -eq 124 ]]; then
   exit 1
 fi
 
-if [[ $CLAUDE_EXIT -ne 0 ]] && ! echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT"; then
+if [[ $CLAUDE_EXIT -ne 0 ]] && ! grep -qE '^[[:space:]]*COMMIT_VERDICT:' <<<"$REVIEW_OUTPUT"; then
   log_review_failure "error: exit ${CLAUDE_EXIT}"
   echo ""
   echo -e "${RED}${BOLD}[manta] Review encountered an error — commit BLOCKED (fail-closed)${RESET}"
@@ -186,7 +197,7 @@ echo ""
 
 # ─── Save review to reports/ ──────────────────────────────────────────────────
 REPORT_DATE=$(date +%Y-%m-%d)
-REPORT_TIME=$(date +%H%M)
+REPORT_TIME=$(date +%H%M%S)   # seconds included: %H%M collided for two commits in one minute
 REPORT_FILE="$GIT_ROOT/reports/${REPORT_DATE}-${REPORT_TIME}-commit-review.md"
 mkdir -p "$GIT_ROOT/reports"
 {
@@ -201,8 +212,20 @@ echo -e "${CYAN}[manta]${RESET} Review saved: ${REPORT_FILE}"
 echo ""
 
 # ─── Parse verdict ────────────────────────────────────────────────────────────
-if echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: BLOCK"; then
-  BLOCK_REASON=$(echo "$REVIEW_OUTPUT" | grep "BLOCK_REASON:" | sed 's/BLOCK_REASON: //' || echo "Critical issues found")
+# Resolve the verdict exactly once, from an anchored match on its own line.
+# An unanchored search matches the string anywhere in the output — including
+# inside a finding that happens to quote it, which is routine whenever the
+# reviewed code is itself a review pipeline. That turned a PASS into a BLOCK.
+# BLOCK_REASON takes the last match for the same reason.
+if   grep -qE '^[[:space:]]*COMMIT_VERDICT: BLOCK' <<<"$REVIEW_OUTPUT"; then VERDICT=BLOCK
+elif grep -qE '^[[:space:]]*COMMIT_VERDICT: WARN'  <<<"$REVIEW_OUTPUT"; then VERDICT=WARN
+elif grep -qE '^[[:space:]]*COMMIT_VERDICT: PASS'  <<<"$REVIEW_OUTPUT"; then VERDICT=PASS
+else VERDICT=""; fi
+
+VERDICT_REASON=$(grep -E '^[[:space:]]*BLOCK_REASON:' <<<"$REVIEW_OUTPUT" | tail -1 | sed 's/^[[:space:]]*BLOCK_REASON: //' || true)
+
+if [[ "$VERDICT" == "BLOCK" ]]; then
+  BLOCK_REASON="${VERDICT_REASON:-Critical issues found}"
 
   echo ""
   echo -e "${RED}${BOLD}╔═══════════════════════════════════════════════════╗${RESET}"
@@ -218,8 +241,8 @@ if echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: BLOCK"; then
   echo ""
   exit 1
 
-elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: WARN"; then
-  WARN_REASON=$(echo "$REVIEW_OUTPUT" | grep "BLOCK_REASON:" | sed 's/BLOCK_REASON: //' || echo "Warnings found")
+elif [[ "$VERDICT" == "WARN" ]]; then
+  WARN_REASON="${VERDICT_REASON:-Warnings found}"
 
   echo ""
   echo -e "${YELLOW}${BOLD}╔═══════════════════════════════════════════════════╗${RESET}"
@@ -234,7 +257,7 @@ elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: WARN"; then
   echo ""
   exit 0
 
-elif echo "$REVIEW_OUTPUT" | grep -q "COMMIT_VERDICT: PASS"; then
+elif [[ "$VERDICT" == "PASS" ]]; then
   echo -e "${GREEN}${BOLD}✅ Review passed — proceeding with commit${RESET}"
   echo ""
   exit 0
