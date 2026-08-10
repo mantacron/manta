@@ -7,7 +7,7 @@
 ```
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                               M A N T A                                       ║
-║                  19-agent · 21-command AI pipeline · free                     ║
+║                  20-agent · 21-command AI pipeline · free                     ║
 ║                                                                               ║
 ║         Every commit reviewed.  Every secret caught.  Free forever.           ║
 ╚═══════════════════════════════════════════════════════════════════════════════╝
@@ -105,6 +105,10 @@ Run `/fix` to get AI-generated fix suggestions for whatever was caught.
 
 ## Developer Commands
 
+**New to Manta? Start with the [Developer User Guide](docs/USER-GUIDE.md)** — install,
+walkthroughs for both new and existing projects, every command with examples (ordered by
+when you'll use them), cost controls, and a cheat sheet.
+
 | Command | What It Does |
 |---------|-------------|
 | `/init` | New project wizard (spec + architecture + scaffold) or quick setup for existing code |
@@ -143,7 +147,7 @@ Step 4 — /rpi-implement {slug}  ← phased code with gates, never all at once
 
 ---
 
-## All 19 Agents
+## All 20 Agents
 
 | Agent | Purpose |
 |-------|---------|
