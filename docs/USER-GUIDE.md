@@ -402,12 +402,14 @@ MANTA_MODEL=opus git push
 ### Timeouts
 
 ```bash
-export CLAUDE_HOOK_TIMEOUT=180        # commit review budget (default 120s)
-export CLAUDE_PUSH_HOOK_TIMEOUT=300   # push review budget (default 240s)
+export CLAUDE_HOOK_TIMEOUT=900        # commit review budget (default 480s)
+export CLAUDE_PUSH_HOOK_TIMEOUT=1800  # push review budget (default 600s)
 ```
 
 Reviews **fail closed**: a review that times out or errors blocks the commit
-rather than waving it through.
+rather than waving it through. The defaults are generous on purpose: a real
+review of a dense diff takes several minutes, and a budget set too low turns
+"slow" into "commit blocked" with no finding to explain it.
 
 ---
 
@@ -464,7 +466,7 @@ Both are logged to `reports/.bypass-log`. Emergency use only.
 
 **"Review timed out — commit BLOCKED."**
 The review didn't finish, so it can't vouch for the commit. Raise the budget with
-`CLAUDE_HOOK_TIMEOUT=180`, or bypass explicitly as above.
+`CLAUDE_HOOK_TIMEOUT=900`, or bypass explicitly as above.
 
 **"No AI CLI found — skipping review."**
 Install one: `npm i -g @anthropic-ai/claude-code`. Or point at another with
@@ -512,6 +514,6 @@ HOUSEKEEPING    /update-docs     README + CHANGELOG
 ESCAPE HATCHES  SKIP_CLAUDE_REVIEW=1 git commit        (logged)
                 SKIP_CLAUDE_PUSH_REVIEW=1 git push     (logged)
                 MANTA_MODEL=opus git push
-                CLAUDE_HOOK_TIMEOUT=180
+                CLAUDE_HOOK_TIMEOUT=900
                 --depth=quick|standard|deep
 ```

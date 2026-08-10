@@ -70,7 +70,12 @@ log_review_failure() {
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
-HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-120}"  # seconds before giving up (whole review)
+# Measured against demo/ (5 files, 4 agents, findings in each): a real review
+# takes ~450s. The old 120s default was under a quarter of that, and since the
+# review fails closed, an over-tight budget turns "slow" into "commit blocked"
+# with no finding to show for it — the worst failure mode this hook has.
+# Override per-repo or per-commit with CLAUDE_HOOK_TIMEOUT.
+HOOK_TIMEOUT="${CLAUDE_HOOK_TIMEOUT:-480}"  # seconds before giving up (whole review)
 SKIP_VAR="SKIP_CLAUDE_REVIEW"
 
 # Per-agent timeout budgets are specified directly in pre-commit-review.md's
@@ -161,7 +166,7 @@ if [[ $CLAUDE_EXIT -eq 124 ]]; then
   echo ""
   echo -e "${RED}${BOLD}[manta] Review timed out after ${HOOK_TIMEOUT}s — commit BLOCKED (fail-closed)${RESET}"
   echo "         The review did not complete, so it cannot clear this commit."
-  echo "         Raise the budget: export CLAUDE_HOOK_TIMEOUT=180"
+  echo "         Raise the budget: export CLAUDE_HOOK_TIMEOUT=900"
   echo "         Bypass (emergency only, logged): SKIP_CLAUDE_REVIEW=1 git commit"
   exit 1
 fi

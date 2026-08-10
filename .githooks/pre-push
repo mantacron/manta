@@ -59,7 +59,7 @@ GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 # Dedicated push budget (falls back to CLAUDE_HOOK_TIMEOUT for existing overrides)
 # so tuning the 4-agent commit timeout can't silently starve the push review.
-HOOK_TIMEOUT="${CLAUDE_PUSH_HOOK_TIMEOUT:-${CLAUDE_HOOK_TIMEOUT:-240}}"
+HOOK_TIMEOUT="${CLAUDE_PUSH_HOOK_TIMEOUT:-${CLAUDE_HOOK_TIMEOUT:-600}}"
 SKIP_VAR="SKIP_CLAUDE_PUSH_REVIEW"
 
 # Logs a fail-closed event (timeout/error/unparseable verdict) to the same
@@ -153,7 +153,7 @@ if [[ $CLAUDE_EXIT -eq 124 ]]; then
   echo ""
   echo -e "${RED}${BOLD}[manta] Push review timed out after ${HOOK_TIMEOUT}s — push BLOCKED (fail-closed)${RESET}"
   echo "         The review did not complete, so it cannot clear this push."
-  echo "         Raise the budget: export CLAUDE_PUSH_HOOK_TIMEOUT=360"
+  echo "         Raise the budget: export CLAUDE_PUSH_HOOK_TIMEOUT=1200"
   echo "         Bypass (emergency only, logged): SKIP_CLAUDE_PUSH_REVIEW=1 git push"
   exit 1
 fi
