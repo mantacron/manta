@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Debt Ledger ]`
+**Begin by outputting:** `[ Manta — Debt Ledger ]`
 
 Harvest `// manta-defer:` inline annotations from the codebase into a structured deferral ledger. Flags intentional shortcuts that have no stated exit condition — the ones that silently rot into permanent tech debt.
 

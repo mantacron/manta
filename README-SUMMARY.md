@@ -97,6 +97,6 @@ src/generated/**     DRY       # Generated code
 
 ## Want More?
 
-**Manta Enterprise** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 30 agents, 32 commands.
+**Manta Enterprise** adds: compliance enforcement (GDPR/HIPAA/PCI-DSS/SOC 2), health scoring, penetration testing, spec governance, observability checks, zero-trust enforcement — 33 agents, 32 commands.
 
 Full documentation: [README.md](README.md)

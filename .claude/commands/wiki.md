@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Wiki ]`
+**Begin by outputting:** `[ Manta — Wiki ]`
 
 Invoke the `wiki-agent` to generate a product wiki at `docs/wiki/`.
 

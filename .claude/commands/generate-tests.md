@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Generate Tests ]`
+**Begin by outputting:** `[ Manta — Generate Tests ]`
 
 Interactively generate missing tests for the codebase or for specific files. Pass a file path as argument to target a specific file: `/generate-tests src/services/user.service.ts`
 

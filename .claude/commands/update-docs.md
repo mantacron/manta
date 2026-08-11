@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Update Docs ]`
+**Begin by outputting:** `[ Manta — Update Docs ]`
 
 Update project documentation: README.md and CHANGELOG.md based on recent changes. Optionally pass a specific message: `/update-docs "Added OAuth2 authentication"`
 

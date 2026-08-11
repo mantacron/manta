@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Audit ]`
+**Begin by outputting:** `[ Manta — Audit ]`
 
 Run a full codebase health audit across security, code quality, and performance.
 Output: `reports/YYYY-MM-DD-report.md` with findings, health score, and quick wins.

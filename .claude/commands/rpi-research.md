@@ -4,7 +4,7 @@ description: RPI Step 2 — Research and analyze a feature for GO/NO-GO. Runs 6 
 argument-hint: "<feature-slug>"
 ---
 
-**Begin by outputting:** `[ Manta Enterprise — RPI: Research ]`
+**Begin by outputting:** `[ Manta — RPI: Research ]`
 
 # RPI: Research
 

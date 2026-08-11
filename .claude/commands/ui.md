@@ -2,7 +2,7 @@
 description: Convert design files (screenshots, Figma exports, wireframes) into production-ready UI components matching the project's conventions. Reads from ui-designs/ by default. Enforces DRY by detecting existing components to reuse. Generates responsive, accessible, typed components with tests and optional Storybook stories.
 ---
 
-**Begin by outputting:** `[ Manta Enterprise — UI/UX ]`
+**Begin by outputting:** `[ Manta — UI/UX ]`
 
 You are orchestrating the `ui-component-writer` to convert design inputs into production-ready components.
 

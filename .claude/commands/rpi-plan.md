@@ -4,7 +4,7 @@ description: RPI Step 3 — Generate comprehensive planning documentation for a 
 argument-hint: "<feature-slug>"
 ---
 
-**Begin by outputting:** `[ Manta Enterprise — RPI: Plan ]`
+**Begin by outputting:** `[ Manta — RPI: Plan ]`
 
 # RPI: Plan
 

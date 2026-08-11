@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Security Scan ]`
+**Begin by outputting:** `[ Manta — Security Scan ]`
 
 Run a security audit of the entire repository — secrets, injection vulnerabilities, and OWASP Top 10 checks.
 

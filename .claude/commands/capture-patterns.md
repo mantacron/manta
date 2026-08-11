@@ -2,7 +2,7 @@
 description: Scan the existing codebase and auto-generate PATTERNS.md with detected conventions. Run once, review the output, then commit it so all agents enforce your team's patterns.
 ---
 
-**Begin by outputting:** `[ Manta Enterprise — Capture Patterns ]`
+**Begin by outputting:** `[ Manta — Capture Patterns ]`
 
 You are scanning this codebase to detect and document its coding patterns.
 

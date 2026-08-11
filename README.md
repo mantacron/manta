@@ -255,7 +255,7 @@ Manta Enterprise is built for engineering teams in regulated industries. On top 
 | **Health scoring + trend reports** | — | ✓ |
 | **Penetration testing** | — | ✓ |
 | **Log analysis** | — | ✓ |
-| Agents | 19 | 30 |
+| Agents | 20 | 33 |
 | Commands | 21 | 32 |
 
 The enterprise tier is what compliance officers, CISOs, and engineering VPs need: continuous automated enforcement of GDPR/HIPAA/SOC 2, codebase health scores for leadership reporting, zero-trust architecture audits, and formal pentest reports — replacing work that would otherwise require 10–12 specialists.

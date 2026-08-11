@@ -1,4 +1,4 @@
-**Begin by outputting:** `[ Manta Enterprise — Pre-Push Review ]`
+**Begin by outputting:** `[ Manta — Pre-Push Review ]`
 
 Non-interactive pre-push review for use by the git pre-push hook. Reviews the full branch diff and outputs a machine-readable verdict.
 
