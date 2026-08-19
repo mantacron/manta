@@ -148,7 +148,7 @@ if [[ -f "$MANTA_DIR/scripts/build-project-map.sh" ]]; then
   cd "$GIT_ROOT" && bash "$MANTA_DIR/scripts/build-project-map.sh" > /dev/null 2>&1 || true
 fi
 
-echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Running: security-sentinel, code-quality, perf-analyzer, db-migration-guardian"
+echo -e "${CYAN}[manta/${AI_TOOL}]${RESET} Running: security-sentinel, code-quality, db-migration-guardian"
 echo ""
 
 # Build the review prompt — prepend shallow scan results so agents don't re-run it

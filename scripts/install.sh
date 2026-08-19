@@ -231,7 +231,10 @@ mkdir -p scripts
 install_file "scripts/setup.sh" "scripts/setup.sh"
 install_file "scripts/shallow-scan.sh" "scripts/shallow-scan.sh"
 install_file "scripts/build-project-map.sh" "scripts/build-project-map.sh"
-chmod +x scripts/setup.sh scripts/shallow-scan.sh scripts/build-project-map.sh
+# The model-policy tool — README documents it as the way to change which model
+# each agent runs on, so it has to exist in an installed project.
+install_file "scripts/models.sh" "scripts/models.sh"
+chmod +x scripts/setup.sh scripts/shallow-scan.sh scripts/build-project-map.sh scripts/models.sh
 log_ok "scripts made executable"
 
 # ─── Step 7: Create ui-designs/ folder ───────────────────────────────────────

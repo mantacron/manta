@@ -360,6 +360,39 @@ else
   log_fail "staged file did NOT invalidate cache — HEAD-only key regression: $(echo "$THIRD_RUN" | head -1)"
 fi
 
+log_step "Model policy and review scope"
+
+# These mirror the enterprise guards. When this tree is published as a
+# standalone repository the enterprise self-test no longer watches it, so the
+# regressions it guards against — an agent pinned back to a fixed model, the
+# repo-audit-per-commit scope leak, the reporter's stranded verdict block —
+# must fail CI here too.
+mapfile -t _HOOK_AGENTS < <(sed -n '/^HOOK_AGENTS=(/,/^)/p' "$ROOT/scripts/models.sh" \
+  | sed '1d;$d' | sed 's/#.*//' | tr ' ' '\n' | sed '/^$/d')
+if [[ ${#_HOOK_AGENTS[@]} -lt 3 ]]; then
+  log_fail "could not parse HOOK_AGENTS from scripts/models.sh — the model guard is checking nothing"
+fi
+_POLICY_OK=1
+for agent in "${_HOOK_AGENTS[@]}"; do
+  f="$ROOT/.claude/agents/$agent.md"
+  [[ -f "$f" ]] || continue   # community ships a subset of the enterprise roster
+  m=$(grep -m1 '^model:' "$f" | sed 's/^model:[[:space:]]*//' | tr -d '[:space:]')
+  [[ "$m" == "inherit" ]] \
+    || { log_fail "$agent declares 'model: ${m:-<unset>}' — hook-path agents must be 'inherit' so MANTA_MODEL works"; _POLICY_OK=0; }
+done
+grep -rql 'Always read the complete file' "$ROOT/.claude/agents" 2>/dev/null \
+  && { log_fail "an agent says 'Always read the complete file' again — contradicts the commit-mode budget"; _POLICY_OK=0; }
+for agent in security-sentinel code-quality perf-analyzer db-migration-guardian; do
+  f="$ROOT/.claude/agents/$agent.md"
+  [[ -f "$f" ]] && { grep -q '^## Review Scope' "$f" \
+    || { log_fail "$agent has no Review Scope section"; _POLICY_OK=0; }; }
+done
+grep -q '^## The return contract' "$ROOT/.claude/agents/review-reporter.md" \
+  || { log_fail "review-reporter lost its return-contract section — the verdict block can strand again"; _POLICY_OK=0; }
+grep -qE '^\- \*\*perf-analyzer\*\*' "$ROOT/.claude/commands/pre-commit-review.md" \
+  && { log_fail "perf-analyzer is back in the commit roster — it belongs at push"; _POLICY_OK=0; }
+[[ $_POLICY_OK -eq 1 ]] && log_ok "model policy, review scope, and the 3-agent roster all hold"
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════${RESET}"

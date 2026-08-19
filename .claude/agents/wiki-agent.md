@@ -1,6 +1,7 @@
 ---
 name: wiki-agent
 description: Generates a product wiki in docs/wiki/ — discovers all routes/screens by framework, captures screenshots when browser tools are available, analyzes feature code, compares to spec/SPEC.md when present, asks the user clarifying questions about ambiguous features, then writes structured markdown documentation.
+model: inherit
 tools: Bash, Read, Write, Glob, Grep
 ---
 

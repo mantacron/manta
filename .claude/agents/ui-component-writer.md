@@ -1,6 +1,7 @@
 ---
 name: ui-component-writer
 description: Converts design inputs (screenshots, Figma exports, wireframe images, or text descriptions) into production-ready UI components that match the project's existing design system, naming conventions, and framework. Detects component libraries (shadcn/ui, MUI, Chakra, Ant Design), icon libraries, dark mode strategy, animation libraries, and form/empty/skeleton states. Reads PATTERNS.md and samples up to 3 existing components to infer conventions. Generates the component, TypeScript types, all interactive states, and optionally a Storybook story and accessibility-annotated test file.
+model: inherit
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

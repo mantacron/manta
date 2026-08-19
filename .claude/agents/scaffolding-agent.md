@@ -1,6 +1,7 @@
 ---
 name: scaffolding-agent
 description: Generates consistent boilerplate for new features by reading the minimal codebase context needed — one similar existing feature, its test, and the project config. Writes code files directly. No report generated — the output is the code itself. Optionally validates generated code against SPEC.md before writing.
+model: inherit
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

@@ -1,7 +1,7 @@
 ---
 name: security-sentinel
 description: Full security audit agent. Checks for OWASP Top 10 vulnerabilities, hardcoded secrets, vulnerable dependencies, injection flaws, broken authentication, insecure data exposure, SSRF, path traversal, and more. Use on any code change — always runs in pre-commit pipeline.
-model: opus
+model: inherit
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -18,6 +18,28 @@ Security review can be expensive on large codebases. Follow this order strictly:
 4. **For dependency audits**: run the package manager command once and parse the output — do not read lockfiles manually
 5. **Cap full-file reads at 10 files per review** — if there are more changed files than that, prioritize using `high_risk_files` from the map, then user-input handling and file I/O
 6. **Do not re-read a file** you already read earlier in the same review session
+
+## Review Scope
+
+The orchestrator states the mode. The mode decides what you are allowed to look at.
+
+| Mode | Scope | Whole-project sweeps |
+|------|-------|----------------------|
+| `commit` | the staged diff — `git diff --cached` | no — `/audit` owns those |
+| `push` | the branch diff — `git diff <base>...HEAD` | no |
+| `audit` / `interactive` | the whole project | yes, that is the point |
+
+In `commit` and `push` mode **every finding must anchor to a line the diff touched**. Reading outside the diff is allowed only to *adjudicate* a changed line — the callee of a call the hunk makes, the definition of a constant it uses, the existing helper a new function duplicates. It is never licence to hunt for problems in code this change did not touch. `review-reporter` drops unanchored findings in these modes, so that work is billed and then thrown away.
+
+**Hard budget in `commit` mode.** A gate that runs on every commit cannot cost what an audit costs:
+
+- **20 tool calls maximum.** On reaching 20, stop and report what you have.
+- **Never** run a test suite, a build, or a whole-project linter, and never invoke `npm`/`pip`/`pytest`/`make` to observe behaviour — behaviour is not this gate's dimension.
+- **Never** execute the project's own hooks or scripts, and never create scratch git repositories to probe how something behaves.
+- **Never** descend into a submodule or a sibling package the diff did not touch.
+- Do not rebuild the project map; the orchestrator already did.
+
+These are limits, not suggestions.
 
 ## Scan Exclusions
 
@@ -171,12 +193,16 @@ rules:
 
 RULES
 
-# Run against staged/changed files only (or full project if no diff context)
+# Changed files only. There is deliberately no whole-project fallback in
+# commit/push mode: "no diff context" means the caller gave you nothing to
+# review, and scanning the entire repo instead turns a per-commit gate into a
+# full audit. Scan everything only in audit/interactive mode, where the caller
+# asked for it.
 CHANGED_FILES=$(git diff --cached --name-only 2>/dev/null | grep -v "^$" | head -20)
 if [ -n "$CHANGED_FILES" ]; then
   echo "$CHANGED_FILES" | xargs -I{} semgrep --config /tmp/manta-sast-rules.yaml --no-rewrite-rule-ids {} 2>/dev/null
 else
-  semgrep --config /tmp/manta-sast-rules.yaml --no-rewrite-rule-ids . 2>/dev/null
+  echo "SAST scan skipped (no changed files in scope)"
 fi
 
 rm -f /tmp/manta-sast-rules.yaml
@@ -282,6 +308,15 @@ Patterns to detect:
 - Files written to predictable locations with dangerous permissions
 
 ### Dependency Vulnerabilities
+
+**In `commit` and `push` mode, run these only when the diff stages a manifest or
+lockfile** (`package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`,
+`requirements*.txt`, `Pipfile.lock`, `poetry.lock`, `Gemfile.lock`, `go.mod`,
+`go.sum`, `Cargo.lock`, `pom.xml`, `build.gradle`). Dependencies cannot acquire
+a CVE because someone edited a source file, so auditing them on every commit
+pays full price for an unchanged answer. In `audit`/`interactive` mode, always
+run them.
+
 Run appropriate commands based on detected package manager:
 
 ```bash

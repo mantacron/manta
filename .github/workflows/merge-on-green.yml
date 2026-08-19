@@ -1,0 +1,110 @@
+name: Merge on Green
+
+# The merge half of the auto-PR pipeline, for repositories where GitHub's
+# native auto-merge is unavailable (private repo on the free plan — branch
+# protection and `gh pr merge --auto` both 403 there). auto-merge.yml opens the
+# PR and labels it `automerge`; this workflow merges it when the checks are
+# green. On a repo where native auto-merge works, auto-merge.yml arms it and
+# this workflow finds the PR already merged — the two mechanisms do not race,
+# because both merge the same head SHA at most once.
+#
+# ## Why workflow_run, not a poll
+#
+# This fires when the "Self-Test" workflow *completes*, and its `conclusion`
+# covers every job in that workflow — "Repo self-test" and "Control plane"
+# both. So "green" here means "the named required workflow succeeded", not
+# "no failures reported yet", which is the trap a status-polling merger falls
+# into: a branch whose checks have not started looks identical to a branch
+# whose checks all passed.
+#
+# ## The four conditions, all required
+#
+#   1. The completed workflow run succeeded (all its jobs).
+#   2. The run's head repository is this repository — never a fork.
+#   3. An open PR exists whose head is the run's exact head SHA. A PR that
+#      received another push after these checks ran does not match and is left
+#      alone; `--match-head-commit` enforces the same thing race-free at merge
+#      time.
+#   4. The PR carries the `automerge` label. This is the opt-in: a human's
+#      work-in-progress branch that happens to go green must not merge under
+#      them. Remove the label to hold a PR; auto-merge.yml applies it to the
+#      PRs it opens.
+#
+# ## Known limitation
+#
+# Without branch protection there is no "require branches to be up to date"
+# rule, so if main moved after this branch diverged, the merged result is the
+# combination — which these checks did not test. The weekly audit and the next
+# push's checks bound how long such a combination goes unexamined. Repos that
+# need the strict guarantee should enable branch protection and let native
+# auto-merge take over.
+
+on:
+  workflow_run:
+    workflows: ["Self-Test"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: merge-on-green-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    name: Merge the green PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      github.event.workflow_run.head_branch != 'main' &&
+      github.event.workflow_run.head_branch != 'master'
+
+    steps:
+      - name: Find the PR this run vouches for, and merge it
+        env:
+          GH_TOKEN: ${{ secrets.MANTA_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+
+          pr=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
+                 --json number,headRefOid,labels \
+                 --jq '.[0] // empty')
+          if [ -z "$pr" ]; then
+            echo "no open PR for $BRANCH — nothing to merge"
+            exit 0
+          fi
+
+          number=$(jq -r '.number' <<<"$pr")
+          head=$(jq -r '.headRefOid' <<<"$pr")
+          has_label=$(jq -r '[.labels[].name] | index("automerge") != null' <<<"$pr")
+
+          if [ "$has_label" != "true" ]; then
+            echo "PR #$number has no 'automerge' label — leaving it for a human"
+            exit 0
+          fi
+          if [ "$head" != "$HEAD_SHA" ]; then
+            echo "PR #$number head ($head) is not the SHA these checks ran on ($HEAD_SHA) — a newer push owns the verdict"
+            exit 0
+          fi
+
+          # --match-head-commit re-asserts condition 3 inside GitHub's own
+          # transaction, so a push that lands between the check above and the
+          # merge call fails the merge instead of shipping untested code.
+          if gh pr merge "$number" --repo "$REPO" --squash --delete-branch \
+               --match-head-commit "$HEAD_SHA"; then
+            echo "::notice title=Merged::PR #$number merged — Self-Test passed on $HEAD_SHA."
+            {
+              echo "## Merge on Green"
+              echo ""
+              echo "PR #$number merged. Every job in Self-Test passed on \`$HEAD_SHA\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning title=Not merged::PR #$number was green but the merge was refused (conflict, a newer push, or permissions). It stays open."
+          fi

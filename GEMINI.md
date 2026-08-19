@@ -8,7 +8,7 @@ Automated code review on every commit. Security scanning, code quality, performa
 
 ## What Manta Does
 
-On every `git commit`: 4 agents review staged changes. CRITICAL findings block the commit.
+On every `git commit`: 3 agents review staged changes. CRITICAL findings block the commit.
 On every `git push`: 3–4 agents run a branch review (db-migration trigger-routed). CRITICAL and WARNING both block.
 
 ---

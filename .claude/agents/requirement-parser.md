@@ -1,7 +1,7 @@
 ---
 name: requirement-parser
 description: Analyzes a feature REQUEST.md and extracts structured requirements, goals, constraints, complexity estimate, and clarifying questions for downstream RPI planning agents. Invoked by /rpi-research.
-model: sonnet
+model: haiku
 tools: Read, Bash, Glob
 color: blue
 ---

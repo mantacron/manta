@@ -1,0 +1,191 @@
+name: Auto PR and Merge
+
+# Push a branch, get a pull request; when the required checks go green, GitHub
+# merges it. Nothing here decides whether the change is good — that judgement
+# stays with the required status checks configured on the protected branch
+# (self-test.yml always, plus the AI review jobs in manta-audit.yml (enterprise only) where an
+# ANTHROPIC_API_KEY is set).
+#
+# ## Why `gh pr merge --auto` and not a polling loop
+#
+# `--auto` hands the merge to GitHub's own merge queue semantics: it waits for
+# every *required* check on the protected branch and merges the moment they
+# pass, or never if one fails. A workflow that polls check statuses and then
+# merges re-implements that badly — it cannot see checks that have not been
+# reported yet, so "all green" and "nothing has started" look identical to it,
+# and it merges an unreviewed branch. That failure mode is silent and it is why
+# this file contains no polling.
+#
+# ## The two prerequisites, and what happens without them
+#
+# 1. **Allow auto-merge** must be on (Settings → General → Pull Requests).
+#    Without it `gh pr merge --auto` errors; the job reports that and leaves the
+#    PR open rather than merging.
+# 2. **Branch protection with at least one required status check** on the
+#    default branch. Without it, "auto-merge when checks pass" is vacuously true
+#    the instant the PR is mergeable — GitHub merges immediately with nothing
+#    verified. This job refuses to enable auto-merge in that state and says so,
+#    because a gate that always opens is worse than no gate: it looks like one.
+#
+# ## GITHUB_TOKEN and the workflow-recursion guard
+#
+# A PR opened using the default `GITHUB_TOKEN` does **not** trigger
+# `pull_request` workflows — GitHub blocks that to stop workflows spawning
+# workflows. Two consequences, both handled:
+#
+#   - `self-test.yml` also runs on `push` to any branch, so its check run lands
+#     on the head SHA and satisfies a required check even for a token-created
+#     PR. Required checks match on context name and SHA, not on which event
+#     produced them.
+#   - The AI review job (`pre-push-check` in manta-audit.yml (enterprise only)) is
+#     `pull_request`-only, so it will not run on a token-created PR. If you want
+#     the AI review to gate the merge, set a `MANTA_PR_TOKEN` secret (a PAT or
+#     app token with `repo` scope) — this workflow prefers it when present, and
+#     a PR opened with it triggers `pull_request` workflows normally.
+
+on:
+  push:
+    branches-ignore: [main, master]
+  workflow_dispatch:
+
+# Two pushes to the same branch in quick succession should not race to open two
+# PRs. The older run is cancelled; the newer one finds whatever it created.
+concurrency:
+  group: auto-merge-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-and-arm:
+    name: Open PR and arm auto-merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Skip the branches that are never meant to become a PR on their own.
+    if: >-
+      !startsWith(github.ref_name, 'dependabot/') &&
+      !startsWith(github.ref_name, 'gh-readonly-queue/')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Open the pull request (or find the open one)
+        id: pr
+        env:
+          # Prefer the PAT so `pull_request` workflows fire; fall back to the
+          # built-in token so the workflow still works with no secrets set.
+          GH_TOKEN: ${{ secrets.MANTA_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+
+          existing=$(gh pr list --head "$BRANCH" --state open --json number \
+                       --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "reusing open PR #$existing"
+            echo "number=$existing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # An empty diff against the default branch is not an error — it is a
+          # branch that has nothing to merge, usually a re-push after a squash.
+          # `gh pr create` would fail with "No commits between ..."; say so
+          # plainly instead of failing the run red.
+          if [ -z "$(git log --oneline "origin/$DEFAULT_BRANCH..HEAD")" ]; then
+            echo "::notice title=Auto PR::no commits ahead of $DEFAULT_BRANCH — nothing to open"
+            echo "number=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" --fill
+
+          number=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          echo "opened PR #$number"
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+          # The `automerge` label is the opt-in that merge-on-green.yml checks
+          # before it will touch a PR. Applied only to PRs this workflow opens —
+          # a human's WIP branch going green must never merge under them.
+          gh label create automerge \
+            --description "merge-on-green may merge this PR when Self-Test passes" \
+            --color 0e8a16 2>/dev/null || true
+          gh pr edit "$number" --add-label automerge
+
+      - name: Verify the branch is actually protected by required checks
+        id: guard
+        if: steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ secrets.MANTA_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # 404 here means no protection rule at all, which is a legitimate
+          # repo state, not a job failure — so the error is swallowed and the
+          # empty result is what gets acted on.
+          contexts=$(gh api \
+            "repos/$REPO/branches/$DEFAULT_BRANCH/protection/required_status_checks" \
+            --jq '(.contexts // []) + [(.checks // [])[].context] | unique | join(", ")' \
+            2>/dev/null || echo "")
+
+          if [ -z "$contexts" ]; then
+            echo "armed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Native auto-merge unavailable::$DEFAULT_BRANCH has no required status checks (none configured, or branch protection is unavailable on this plan). merge-on-green.yml owns the merge instead: it fires when Self-Test completes and merges this PR only if every job passed on this exact SHA."
+          else
+            echo "armed=true" >> "$GITHUB_OUTPUT"
+            echo "required checks: $contexts"
+          fi
+          echo "contexts=$contexts" >> "$GITHUB_OUTPUT"
+
+      - name: Arm auto-merge
+        if: steps.pr.outputs.number != '' && steps.guard.outputs.armed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.MANTA_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          # Through the environment, never interpolated into the script text.
+          # This value is a PR number this workflow just read back from `gh`, so
+          # it cannot carry shell syntax today — but the discipline is the point:
+          # `${{ }}` is substituted before bash parses the line, so the moment an
+          # expression here becomes attacker-influenced, direct interpolation is
+          # remote code execution in a job holding a token with write access.
+          # manta-audit.yml already learned this; the rule holds everywhere.
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          if gh pr merge "$PR_NUMBER" --auto --squash --delete-branch; then
+            echo "::notice title=Auto-merge armed::PR #$PR_NUMBER will merge once required checks pass."
+          else
+            echo "::warning title=Auto-merge unavailable::Could not arm auto-merge on PR #$PR_NUMBER. The usual cause is 'Allow auto-merge' being off in Settings → General → Pull Requests. The PR is open and can be merged by hand."
+          fi
+
+      - name: Summary
+        if: always()
+        env:
+          NUMBER: ${{ steps.pr.outputs.number }}
+          ARMED: ${{ steps.guard.outputs.armed }}
+          CONTEXTS: ${{ steps.guard.outputs.contexts }}
+        run: |
+          {
+            echo "## Auto PR and Merge"
+            echo ""
+            if [ -z "$NUMBER" ]; then
+              echo "No pull request — this branch has no commits ahead of the default branch."
+            else
+              echo "| | |"
+              echo "|---|---|"
+              echo "| Pull request | #$NUMBER |"
+              if [ "$ARMED" = "true" ]; then
+                echo "| Auto-merge | armed (squash) |"
+                echo "| Waits for | \`$CONTEXTS\` |"
+              else
+                echo "| Native auto-merge | unavailable (no required checks on this plan) |"
+                echo "| Merge path | \`merge-on-green.yml\` — merges when every Self-Test job passes on this exact SHA (\`automerge\` label is the opt-in) |"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

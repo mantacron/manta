@@ -19,7 +19,7 @@ claude
 ## How It Works
 
 ```
-git commit  →  4 agents (db-migration trigger-routed)  →  CRITICAL blocks commit
+git commit  →  3 agents (db-migration trigger-routed)  →  CRITICAL blocks commit
 git push    →  3–4 agents (db-migration trigger-routed)  →  CRITICAL + WARNING blocks push
 ```
 

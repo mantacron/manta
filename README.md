@@ -264,6 +264,67 @@ The enterprise tier is what compliance officers, CISOs, and engineering VPs need
 
 ---
 
+## Cost and Model Control
+
+Every review runs real models against real tokens, so which model each agent
+uses is a setting you own, not an implementation detail.
+
+### The one knob: `MANTA_MODEL`
+
+The git hooks and the CI workflows pass `--model "${MANTA_MODEL:-sonnet}"`.
+Every agent on the hook path declares `model: inherit`, so that one variable
+sets the cost of the whole gate:
+
+```bash
+MANTA_MODEL=opus git commit          # heavier review, this commit only
+MANTA_MODEL=haiku git commit         # cheapest pass
+MANTA_MODEL=opus git push            # release gate
+export MANTA_MODEL=opus              # for the whole shell session
+```
+
+Set it as a repository or organisation variable to apply it in CI.
+
+### Per-agent: `scripts/models.sh`
+
+Each agent declares its model in the `model:` field of its own
+`.claude/agents/<name>.md`. That field **overrides** whatever `--model` the
+caller passed — so pinning an agent to `opus` means it runs on Opus inside a
+hook that asked for Sonnet. Change one without going hunting:
+
+```bash
+bash scripts/models.sh                        # show every agent's model
+bash scripts/models.sh code-quality haiku     # change one agent
+bash scripts/models.sh --hooks sonnet         # every agent the hooks run
+bash scripts/models.sh --check                # fail if any agent is unset
+```
+
+Editing the frontmatter by hand does the same thing; the script just keeps both
+editions in step and validates the model name.
+
+### Defaults, and the reasoning
+
+| Tier | Agents | Why |
+|------|--------|-----|
+| `inherit` | the review gate — security-sentinel, code-quality, perf-analyzer, db-migration-guardian, review-reporter — plus the artifact producers: code-writer, scaffolding-agent, ui-component-writer, wiki-agent | Cost should follow the caller. In a hook that means `MANTA_MODEL` (Sonnet by default); in an interactive `/audit` it means whatever model you are already running. Generated code follows the model you chose for the same reason |
+| `haiku` | requirement-parser, pr-summarizer, doc-keeper | Extraction and formatting against a fixed shape. A stronger model produces the same file |
+| `sonnet` | blueprint-agent, remediation-agent, senior-software-engineer, product-manager, ux-planner, documentation-analyst-writer | Rubric-driven analysis and drafting — the bulk of the work |
+| `opus` | technical-cto-advisor, constitutional-validator | The two agents that render a decision rather than a finding: GO/NO-GO, and the ethics/safety gate. Rare, and expensive to get wrong |
+
+Three of the review agents used to be pinned to `opus`, which cost a measured
+**~1.5M tokens per commit, two-thirds of it Opus** — the hook's `--model sonnet` had no effect on them.
+They are `inherit` now, which is what makes `MANTA_MODEL` real.
+
+### Depth, when you want more review rather than a bigger model
+
+`/audit` and `/review` take `--depth=quick|standard|deep`.
+Depth changes how much each agent reads and reports; it is usually the better
+lever, because it keeps full rigour available without paying for it every time.
+
+```bash
+/audit --depth=deep        # release gate
+/review --depth=quick      # tight loop
+```
+
 ## Requirements
 
 - One AI CLI — whichever you prefer:

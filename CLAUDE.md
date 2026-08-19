@@ -32,8 +32,9 @@ Then open Claude Code:
      ↓
 git commit
      ↓
-Pre-commit hook fires → 4 agents review staged changes
-(security-sentinel, code-quality, perf-analyzer, db-migration-guardian)
+Pre-commit hook fires → 3 agents review staged changes
+(security-sentinel, code-quality, db-migration-guardian — the checks where
+ committing is itself the harm; perf, spec, tests, compliance run at push)
      ↓
 CRITICAL? → Commit BLOCKED
 WARNING? → Commit allowed, shown prominently

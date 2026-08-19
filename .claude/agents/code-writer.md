@@ -1,6 +1,7 @@
 ---
 name: code-writer
 description: Writes production-complete feature implementations with enterprise best practices baked in — clean architecture layers, rate limiting, auth middleware, input validation, structured error handling, request logging, pagination, caching, and transactions. Goes beyond scaffolding — no TODOs, no placeholder logic.
+model: inherit
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 

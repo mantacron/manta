@@ -6,8 +6,18 @@ name: Self-Test
 # cache). No AI, no secrets, finishes in under a minute.
 
 on:
+  # Every branch, not just the default one. auto-merge.yml opens pull requests
+  # with GITHUB_TOKEN, and GitHub deliberately does not fire `pull_request`
+  # workflows for those — so a PR-only trigger would leave the required check
+  # permanently pending and auto-merge would wait forever. A `push` run reports
+  # its check against the same head SHA, which is what branch protection
+  # actually matches on, so the gate resolves either way.
+  #
+  # The cost is that a branch with an open PR runs this twice on the same SHA.
+  # That is deliberate: this job is deterministic, key-free and under a minute,
+  # and de-duplicating it via `concurrency` risks cancelling the very run that
+  # branch protection is waiting on.
   push:
-    branches: [main, master]
   pull_request:
   workflow_dispatch:
 

@@ -153,7 +153,7 @@ automatic.
 ```
    write code
        ↓
-   git commit ──────► pre-commit hook: 4 agents review staged changes
+   git commit ──────► pre-commit hook: 3 agents review staged changes
        ↓                 security-sentinel · code-quality
        │                 perf-analyzer · db-migration-guardian (if migrations)
        │
