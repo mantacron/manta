@@ -36,12 +36,25 @@ detect_ai_tool() {
   echo ""
 }
 
+# The reviewer reads the diff, and the diff is written by whoever opened the
+# change. Denying the two tools whose purpose is reaching a URL means a line of
+# code cannot ask the reviewer to post this machine's environment somewhere.
+# Bash stays: the review shells out to git and to package managers, which is the
+# review itself.
+MANTA_REVIEW_DENIED_TOOLS="${MANTA_REVIEW_DENIED_TOOLS:-WebFetch,WebSearch}"
+
 run_ai_review() {
   local tool="$1"
   local prompt="$2"
   local hook_timeout="${3:-180}"
   case "$tool" in
-    claude) timeout "$hook_timeout" claude --print --model "${MANTA_MODEL:-sonnet}" "$prompt" 2>&1 ;;
+    # `--` before the prompt is load-bearing: --disallowedTools takes a *list*,
+    # so a bare prompt immediately after it is parsed as more deny rules. The
+    # gate caught this by failing closed on "Permission deny rule '##' matches
+    # no known tool" — every review would have errored, which is the right
+    # failure but an expensive one to debug from the message alone.
+    claude) timeout "$hook_timeout" claude --print --model "${MANTA_MODEL:-sonnet}" \
+              --disallowedTools "$MANTA_REVIEW_DENIED_TOOLS" -- "$prompt" 2>&1 ;;
     codex)  timeout "$hook_timeout" codex -q "$prompt" 2>&1 ;;
     gemini) timeout "$hook_timeout" gemini -p "$prompt" 2>&1 ;;
     *)      return 1 ;;
