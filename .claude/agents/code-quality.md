@@ -144,6 +144,12 @@ If `PATTERNS.md` doesn't exist: proceed with generic rules only.
 - Feature flags that are always on/off and never toggle
 - Deprecated code paths with no migration plan
 
+### Suppression Hygiene
+- `// manta-ignore:` (or `# manta-ignore:`) with nothing after the colon — a suppression without a reason
+  cannot be defended at review time. Flag it as WARNING and quote the line; do not treat it as a finding
+  about the code it suppresses.
+- `// manta-defer:` missing either `ceiling:` or `trigger:` — flag as WARNING; `/debt` cannot retire it.
+
 ### Code Smells
 - Magic numbers/strings — should be named constants
 - Long parameter lists (>4 params suggest object parameter)
@@ -240,6 +246,7 @@ QUALITY_PASS | QUALITY_WARN | QUALITY_BLOCK
 - Missing edge case that could cause issues in certain inputs
 - Misleading name that will cause confusion
 - Error handling that's not good enough
+- `manta-ignore` with no reason, or `manta-defer` with no ceiling/trigger
 
 **INFO** (suggestion):
 - Minor naming improvements
