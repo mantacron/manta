@@ -391,6 +391,17 @@ grep -q '^## The return contract' "$ROOT/.claude/agents/review-reporter.md" \
   || { log_fail "review-reporter lost its return-contract section — the verdict block can strand again"; _POLICY_OK=0; }
 grep -qE '^\- \*\*perf-analyzer\*\*' "$ROOT/.claude/commands/pre-commit-review.md" \
   && { log_fail "perf-analyzer is back in the commit roster — it belongs at push"; _POLICY_OK=0; }
+# The roster the reporter PRINTS is a second copy of that fact, and it drifted
+# from it unseen: the commit template kept a perf-analyzer line after the agent
+# moved to push, so the reporter filled it in and the output claimed an agent
+# had run that nothing had dispatched. The commit-mode template is the first
+# AGENT RESULTS block; the second is push mode, where perf-analyzer belongs.
+_commit_block=$(awk '/^AGENT RESULTS:/{n++} n==1{print} /^$/{if (n==1) exit}' \
+  "$ROOT/.claude/agents/review-reporter.md")
+grep -q 'perf-analyzer' <<< "$_commit_block" \
+  && { log_fail "review-reporter's commit template names perf-analyzer — it will invent a status for an agent that never ran"; _POLICY_OK=0; }
+grep -q 'Never write a status for' "$ROOT/.claude/agents/review-reporter.md" \
+  || { log_fail "review-reporter lost the rule forbidding statuses for agents that never ran"; _POLICY_OK=0; }
 [[ $_POLICY_OK -eq 1 ]] && log_ok "model policy, review scope, and the 3-agent roster all hold"
 
 # ─── Summary ──────────────────────────────────────────────────────────────────

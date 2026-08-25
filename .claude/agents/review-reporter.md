@@ -120,7 +120,6 @@ SENTINEL_MODE: [SHALLOW|DEEP]
 AGENT RESULTS:
 security-sentinel: [PASS|WARN|BLOCK|TIMEOUT]
 code-quality: [PASS|WARN|BLOCK|TIMEOUT]
-perf-analyzer: [PASS|WARN|BLOCK|TIMEOUT]
 db-migration-guardian: [PASS|WARN|BLOCK|SKIP|TIMEOUT]
 
 CRITICAL ISSUES:
@@ -136,6 +135,22 @@ WARNINGS:
 
 COMMIT_VERDICT: PASS
 ```
+
+**Report the agents that ran. No others, ever.**
+
+This list is the commit roster and nothing else — three agents, because
+perf-analyzer moved to push time and the PR job. Write a line for an agent only
+if you were given its result. If a result is missing, say so as `TIMEOUT`; if an
+agent was dispatched and declined to run, say `SKIP`. Never write a status for
+an agent that was not dispatched.
+
+That is not a style rule. This block is what the developer reads to know what
+was checked, and a line naming an agent that never ran is a false claim of
+coverage — it reads as "perf was looked at" when nothing looked. It happened:
+this template listed perf-analyzer after the roster shrank, and the reporter
+dutifully filled the line in with `TIMEOUT` for an agent no orchestrator had
+called. A verdict block that invents one status is a verdict block that cannot
+be trusted about the others.
 
 OR if there are critical issues:
 
