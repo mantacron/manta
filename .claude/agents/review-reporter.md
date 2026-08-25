@@ -198,6 +198,21 @@ WARNINGS:
 PUSH_VERDICT: PASS
 ```
 
+**The verdict line is a bare line. No markdown, ever.**
+
+Write it exactly as `PUSH_VERDICT: PASS` at the start of its own line — no
+emphasis, no backticks, no blockquote, no list marker, nothing before it.
+
+The hooks grep for this line, and a real push was blocked by
+`**PUSH_VERDICT: PASS**`: the review had passed, the parser could not see a
+verdict at all, and it failed closed. The hooks now skip emphasis when matching,
+so this is belt and braces — but the belt is here, because a report that
+formats its conclusion is a report whose conclusion nobody can read. The same
+goes for `BLOCK_REASON:`.
+
+The surrounding narrative may be as marked-up as it likes. These two lines may
+not.
+
 OR `PUSH_VERDICT: BLOCK` + `BLOCK_REASON: [N critical issues found — see above]` for criticals, OR `PUSH_VERDICT: WARN` + `BLOCK_REASON: [N warnings found — see above]` for warnings only — same shape as commit mode.
 
 If any findings were suppressed, add a single line `SUPPRESSED: [N] findings via .mantaignore/inline annotations` immediately before `=== END REVIEW ===`.

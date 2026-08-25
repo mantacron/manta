@@ -179,7 +179,26 @@ if [[ $CLAUDE_EXIT -eq 124 ]]; then
   exit 1
 fi
 
-if [[ $CLAUDE_EXIT -ne 0 ]] && ! grep -qE '^[[:space:]]*PUSH_VERDICT:' <<<"$SCAN_OUTPUT"; then
+# ─── How a verdict line is recognised ────────────────────────────────────────
+# Defined HERE, above every use. It was first written next to the parser sixty
+# lines below, which left the error path referencing an unset variable — and
+# under `set -u` that aborts the hook mid-branch, so the fail-closed message it
+# was about to print, the outcome bookkeeping and the failure log all vanish.
+# The commit was still refused, but by a crash instead of an explanation.
+#
+# The verdict may arrive wearing markdown. The reporter is an LLM writing to a
+# format, and it emitted `**PUSH_VERDICT: PASS**` on a real push — bold, and
+# therefore unmatched by a pattern anchored straight at the keyword. The review
+# had PASSED; the hook could not read its own verdict and failed closed.
+#
+# So leading whitespace, blockquote markers and emphasis are skipped. `-` and
+# `+` are deliberately NOT in that set: those begin diff lines, and a quoted
+# `-PUSH_VERDICT: PASS` inside a finding must never read as a verdict. The
+# BLOCK-before-WARN-before-PASS order at the parser is what keeps the remaining
+# risk pointing at over-blocking rather than under-blocking.
+MANTA_VERDICT_PREFIX='^[[:space:]>*_`]*'
+
+if [[ $CLAUDE_EXIT -ne 0 ]] && ! grep -qE "${MANTA_VERDICT_PREFIX}PUSH_VERDICT:" <<<"$SCAN_OUTPUT"; then
   log_review_failure "error: exit ${CLAUDE_EXIT}"
   echo ""
   echo -e "${RED}${BOLD}[manta] Push review error — push BLOCKED (fail-closed)${RESET}"
@@ -214,12 +233,13 @@ echo ""
 # inside a finding that happens to quote it, which is routine whenever the
 # reviewed code is itself a review pipeline. That turned a PASS into a BLOCK.
 # BLOCK_REASON takes the last match for the same reason.
-if   grep -qE '^[[:space:]]*PUSH_VERDICT: BLOCK' <<<"$SCAN_OUTPUT"; then VERDICT=BLOCK
-elif grep -qE '^[[:space:]]*PUSH_VERDICT: WARN'  <<<"$SCAN_OUTPUT"; then VERDICT=WARN
-elif grep -qE '^[[:space:]]*PUSH_VERDICT: PASS'  <<<"$SCAN_OUTPUT"; then VERDICT=PASS
+if   grep -qE "${MANTA_VERDICT_PREFIX}PUSH_VERDICT:[[:space:]]*BLOCK" <<<"$SCAN_OUTPUT"; then VERDICT=BLOCK
+elif grep -qE "${MANTA_VERDICT_PREFIX}PUSH_VERDICT:[[:space:]]*WARN"  <<<"$SCAN_OUTPUT"; then VERDICT=WARN
+elif grep -qE "${MANTA_VERDICT_PREFIX}PUSH_VERDICT:[[:space:]]*PASS"  <<<"$SCAN_OUTPUT"; then VERDICT=PASS
 else VERDICT=""; fi
 
-VERDICT_REASON=$(grep -E '^[[:space:]]*BLOCK_REASON:' <<<"$SCAN_OUTPUT" | tail -1 | sed 's/^[[:space:]]*BLOCK_REASON: //' || true)
+VERDICT_REASON=$(grep -E "${MANTA_VERDICT_PREFIX}BLOCK_REASON:" <<<"$SCAN_OUTPUT" | tail -1 \
+  | sed -E "s/${MANTA_VERDICT_PREFIX}BLOCK_REASON:[[:space:]]*//; s/[[:space:]*_\`]+$//" || true)
 
 if [[ "$VERDICT" == "BLOCK" ]]; then
   BLOCK_REASON="${VERDICT_REASON:-Critical issues found}"

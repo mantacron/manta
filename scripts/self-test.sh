@@ -404,6 +404,86 @@ grep -q 'Never write a status for' "$ROOT/.claude/agents/review-reporter.md" \
   || { log_fail "review-reporter lost the rule forbidding statuses for agents that never ran"; _POLICY_OK=0; }
 [[ $_POLICY_OK -eq 1 ]] && log_ok "model policy, review scope, and the 3-agent roster all hold"
 
+# ─── The hook can read the verdict the reporter actually writes ──────────────
+#
+# The reporter is a model writing to a format, and on a real push it wrote
+# `**PUSH_VERDICT: PASS**`. The parser was anchored straight at the keyword, so
+# a passing review became "no parseable PUSH_VERDICT — push BLOCKED". Fail-closed
+# is the right direction and it was still a blocked push with a clean review
+# behind it, which is the shape of failure that teaches people to set
+# SKIP_CLAUDE_PUSH_REVIEW=1.
+#
+# The regex is read out of the hook rather than restated here: a copy would let
+# the two drift, and this test would then pass on a pattern nothing uses.
+log_step "Verdict parsing survives the markdown the reporter emits"
+
+VERDICT_OK=1
+for hook_kind in "pre-push:PUSH" "pre-commit:COMMIT"; do
+  hook="${hook_kind%%:*}"; kind="${hook_kind##*:}"
+  hook_file="$ROOT/.githooks/$hook"
+  [[ -f "$hook_file" ]] || { log_fail "missing $hook_file"; VERDICT_OK=0; continue; }
+
+  prefix=$(sed -n "s/^MANTA_VERDICT_PREFIX='\(.*\)'$/\1/p" "$hook_file" | head -1)
+  if [[ -z "$prefix" ]]; then
+    log_fail "$hook: MANTA_VERDICT_PREFIX is gone — the parser is anchored at the keyword again"
+    VERDICT_OK=0
+    continue
+  fi
+
+  # Must be read: the emphasis a reporter reaches for unprompted.
+  while IFS= read -r line; do
+    grep -qE "${prefix}${kind}_VERDICT:[[:space:]]*PASS" <<<"$line" \
+      || { log_fail "$hook: a real verdict is unreadable — [$line]"; VERDICT_OK=0; }
+  done <<EOF
+${kind}_VERDICT: PASS
+**${kind}_VERDICT: PASS**
+  ${kind}_VERDICT: PASS
+> **${kind}_VERDICT: PASS**
+EOF
+
+  # Must NOT be read: a verdict quoted inside a finding or a diff. This repo
+  # reviews a review pipeline, so its own diffs carry these strings constantly.
+  while IFS= read -r line; do
+    grep -qE "${prefix}${kind}_VERDICT:[[:space:]]*PASS" <<<"$line" \
+      && { log_fail "$hook: a quoted verdict is readable as a verdict — [$line]"; VERDICT_OK=0; }
+  done <<EOF
+-${kind}_VERDICT: PASS
++${kind}_VERDICT: PASS
+the report said ${kind}_VERDICT: PASS here
+EOF
+
+  # Defined before used, under `set -u`.
+  #
+  # The first version of this fix referenced the prefix in the "review errored"
+  # branch and assigned it sixty lines later, next to the parser. That branch
+  # then died on `unbound variable` — the commit was still refused, but by a
+  # crash instead of the fail-closed message, and the outcome bookkeeping and
+  # failure log never ran. A pattern nothing can expand is worse than a strict
+  # one, and it only shows on the error path, which is the path nobody exercises.
+  def_line=$(grep -n "^MANTA_VERDICT_PREFIX=" "$hook_file" | head -1 | cut -d: -f1)
+  use_line=$(grep -n 'MANTA_VERDICT_PREFIX}' "$hook_file" | head -1 | cut -d: -f1)
+  if [[ -z "$def_line" || -z "$use_line" || "$def_line" -gt "$use_line" ]]; then
+    log_fail "$hook: MANTA_VERDICT_PREFIX is used at line ${use_line:-?} before it is set at line ${def_line:-never} — under set -u the error path aborts instead of failing closed with a message"
+    VERDICT_OK=0
+  fi
+
+  # The strictness the guard assumes. Without `set -u` the bug above is a silent
+  # empty prefix rather than a crash, which reads as an unanchored match.
+  grep -qE '^set -euo pipefail' "$hook_file" \
+    || { log_fail "$hook: no 'set -euo pipefail' — an unset prefix would silently match anywhere"; VERDICT_OK=0; }
+
+  # BLOCK is tried before PASS, so a review carrying both refuses. Losing that
+  # order turns the safe failure into the unsafe one.
+  block_line=$(grep -n "VERDICT=BLOCK" "$hook_file" | head -1 | cut -d: -f1)
+  pass_line=$(grep -n "VERDICT=PASS" "$hook_file" | head -1 | cut -d: -f1)
+  if [[ -z "$block_line" || -z "$pass_line" || "$block_line" -ge "$pass_line" ]]; then
+    log_fail "$hook: BLOCK is no longer resolved before PASS"
+    VERDICT_OK=0
+  fi
+done
+[[ $VERDICT_OK -eq 1 ]] \
+  && log_ok "both hooks read an emphasised verdict, refuse a quoted one, and try BLOCK first"
+
 # ─── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════════════════${RESET}"
