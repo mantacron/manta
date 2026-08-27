@@ -21,6 +21,33 @@ The orchestrator states the mode. The mode decides what you are allowed to look 
 
 In `commit` and `push` mode **every finding must anchor to a line the diff touched**. Reading outside the diff is allowed only to *adjudicate* a changed line — the callee of a call the hunk makes, the definition of a constant it uses, the existing helper a new function duplicates. It is never licence to hunt for problems in code this change did not touch. `review-reporter` drops unanchored findings in these modes, so that work is billed and then thrown away.
 
+**One kind of outside-the-diff read is required, not merely allowed: the lists a
+change joins.** When a hunk adds a participant to some mechanism — a file that
+gets sourced or loaded, an agent in a roster, a table in a schema, a route, a
+scope, a required-file check, a cache key's inputs — find the places that
+*enumerate* participants of that mechanism and check the new one is in all of
+them. Those enumerations are almost always outside the diff. That is exactly why
+they get missed, and the finding still anchors correctly to the line that added
+the participant.
+
+This is the single most expensive blind spot this pipeline has measured. A real
+example: a commit added a library that the pre-commit hook sources
+unconditionally, and the verdict cache's key — which hashes the hook and its
+library so an edit invalidates stale verdicts — was never extended to include it.
+The result was a gate that could serve a cached PASS for a review whose own
+logic had changed. Every agent read the diff and missed it; a plain unstructured
+reviewer with no routing found it, because it asked what else refers to this
+thing. The same shape has recurred here as a roster copied into five files and a
+list of tables that a twelfth table silently did not join.
+
+Two questions, on any change that adds or removes a participant:
+
+1. **What enumerates these?** Grep for a sibling's name — the existing entries
+   are how you find the list. One grep is usually the whole cost.
+2. **Which code path actually runs now?** A change that adds a branch, a
+   fallback, or a dispatcher makes the old path conditional. Anything asserting
+   "the system does X" may now be asserting it about the path nobody takes.
+
 **Hard budget in `commit` mode.** A gate that runs on every commit cannot cost what an audit costs:
 
 - **20 tool calls maximum.** On reaching 20, stop and report what you have.

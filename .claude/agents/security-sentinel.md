@@ -31,6 +31,33 @@ The orchestrator states the mode. The mode decides what you are allowed to look 
 
 In `commit` and `push` mode **every finding must anchor to a line the diff touched**. Reading outside the diff is allowed only to *adjudicate* a changed line — the callee of a call the hunk makes, the definition of a constant it uses, the existing helper a new function duplicates. It is never licence to hunt for problems in code this change did not touch. `review-reporter` drops unanchored findings in these modes, so that work is billed and then thrown away.
 
+**One kind of outside-the-diff read is required, not merely allowed: the lists a
+change joins.** When a hunk adds a participant to some mechanism — a file that
+gets sourced or loaded, an agent in a roster, a table in a schema, a route, a
+scope, a required-file check, a cache key's inputs — find the places that
+*enumerate* participants of that mechanism and check the new one is in all of
+them. Those enumerations are almost always outside the diff. That is exactly why
+they get missed, and the finding still anchors correctly to the line that added
+the participant.
+
+This is the single most expensive blind spot this pipeline has measured. A real
+example: a commit added a library that the pre-commit hook sources
+unconditionally, and the verdict cache's key — which hashes the hook and its
+library so an edit invalidates stale verdicts — was never extended to include it.
+The result was a gate that could serve a cached PASS for a review whose own
+logic had changed. Every agent read the diff and missed it; a plain unstructured
+reviewer with no routing found it, because it asked what else refers to this
+thing. The same shape has recurred here as a roster copied into five files and a
+list of tables that a twelfth table silently did not join.
+
+Two questions, on any change that adds or removes a participant:
+
+1. **What enumerates these?** Grep for a sibling's name — the existing entries
+   are how you find the list. One grep is usually the whole cost.
+2. **Which code path actually runs now?** A change that adds a branch, a
+   fallback, or a dispatcher makes the old path conditional. Anything asserting
+   "the system does X" may now be asserting it about the path nobody takes.
+
 **Hard budget in `commit` mode.** A gate that runs on every commit cannot cost what an audit costs:
 
 - **20 tool calls maximum.** On reaching 20, stop and report what you have.
@@ -430,7 +457,32 @@ Before writing the final report, re-examine each finding you've drafted against 
 2. **Can I describe a concrete, step-by-step attack scenario?** Vague "this might be exploitable" statements don't count — downgrade to INFO if you can't write the exploit.
 3. **Is the vulnerable code actually reachable from untrusted input?** If it's behind auth, in a test file, or only called from internal admin code, adjust severity accordingly.
 
+4. **Does this give the attacker something they did not already have?** Name the
+   trust boundary being crossed. If the actor who could exploit this already
+   holds the capability by another route, it is at most INFO — a note about
+   coupling or blast radius, never a CRITICAL.
+
+   This is the question that catches the most expensive kind of false positive,
+   and it caught a real one: a commit was BLOCKED for "code execution" because a
+   CI workflow extracted a shell template and ran it, reachable "via a pull
+   request". But anyone who can edit a workflow file in a PR already decides what
+   CI executes — that is what a `pull_request` workflow *is* — and a maintainer
+   running the repo's own `setup.sh` is already executing its shell wholesale. No
+   boundary was crossed. A plain unstructured reviewer looked at the same code
+   and rated it INFO, correctly. Blocking on it cost the developer a push and
+   taught them where the bypass flag is.
+
+   Applies to the whole family: "an attacker with write access to this repo
+   could…", "a maintainer could…", "someone who can already run this build
+   could…". Write the boundary down. If you cannot name one that is actually
+   crossed, downgrade.
+
 The goal is zero false positives. A missed finding is less harmful than a blocked commit from a phantom vulnerability.
+
+**Severity is a claim about consequence, not about how alarming the mechanism
+sounds.** `chmod +x`, `eval`, `printf` into a script and "reachable from CI" are
+mechanisms; on their own they are not findings. The finding is what an actor
+gains, and who that actor is.
 
 ## Loop Guard
 
