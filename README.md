@@ -21,11 +21,11 @@
 
 ## What It Does
 
-Manta embeds an automated review team into your git workflow. On every `git commit`, four agents run in parallel and block anything dangerous before it lands in your repo.
+Manta embeds an automated review team into your git workflow. On every `git commit`, three agents run in parallel and block anything dangerous before it lands in your repo.
 
 | When | Agents | What Gets Caught |
 |------|--------|-----------------|
-| `git commit` | 3–4 agents | Secrets, injection flaws, OWASP Top 10, N+1 queries, bad migrations (trigger-routed), DRY violations, naming issues |
+| `git commit` | 3 agents | Secrets, injection flaws, OWASP Top 10, bad migrations (trigger-routed), DRY violations, naming issues |
 | `git push` | 3–4 agents | Full branch review — same checks, broader scope (db-migration trigger-routed) |
 | On demand | All agents | Security scan, blueprint, scaffold, UI generation, test generation |
 
@@ -89,14 +89,17 @@ Done. Every `git commit` now triggers the review pipeline automatically — rega
 
 ---
 
-## The 4 Core Agents (Run on Every Commit)
+## The 3 Core Agents (Run on Every Commit)
 
 | Agent | What It Catches |
 |-------|----------------|
 | **security-sentinel** | Hardcoded secrets, API keys, SQL injection, XSS, auth bypass, OWASP Top 10 |
 | **code-quality** | DRY violations, high complexity, dead code, poor naming, missing error handling |
-| **perf-analyzer** | N+1 queries, memory leaks, blocking async operations, O(n²) algorithms |
 | **db-migration-guardian** | Table locks, missing rollbacks, unsafe `NOT NULL`, irreversible changes |
+
+These are the checks where *committing is itself the harm* — a secret in the history stays in
+the history. `perf-analyzer` and the rest run at **push**, where the cost of catching something
+late is a rebase rather than a rotated credential.
 
 A `CRITICAL` finding blocks the commit. A `WARNING` shows prominently and blocks the push.
 Run `/fix` to get AI-generated fix suggestions for whatever was caught.
@@ -242,7 +245,7 @@ Manta Enterprise is built for engineering teams in regulated industries. On top 
 
 | | Community | Enterprise |
 |---|:---:|:---:|
-| Pre-commit review (4 agents, db-migration trigger-routed) | ✓ | ✓ |
+| Pre-commit review (3 agents, db-migration trigger-routed) | ✓ | ✓ |
 | Pre-push review | 3–4 agents (trigger-routed) | up to 9 agents (trigger-routed) |
 | Code generation (scaffold, write, ui) | ✓ | ✓ |
 | Security scan | OWASP + secrets | + CVE audit, license check, dead deps |

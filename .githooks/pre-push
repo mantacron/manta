@@ -71,7 +71,7 @@ GIT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 # ─── Config ───────────────────────────────────────────────────────────────────
 CLAUDE_BIN="${CLAUDE_BIN:-claude}"  # kept for backward compat
 # Dedicated push budget (falls back to CLAUDE_HOOK_TIMEOUT for existing overrides)
-# so tuning the 4-agent commit timeout can't silently starve the push review.
+# so tuning the 3-agent commit timeout can't silently starve the push review.
 HOOK_TIMEOUT="${CLAUDE_PUSH_HOOK_TIMEOUT:-${CLAUDE_HOOK_TIMEOUT:-600}}"
 SKIP_VAR="SKIP_CLAUDE_PUSH_REVIEW"
 
