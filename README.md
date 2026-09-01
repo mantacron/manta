@@ -1,7 +1,17 @@
 # Manta
 
 <p align="center">
-  <img src="https://drive.google.com/uc?export=view&id=1Z4H0gpwkAcYIODVD_st3qp0SPI0ehMjt" alt="Mantacron" width="200" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/white-outline-only.png" />
+    <img src="docs/logo/manta-logo.png" alt="Manta by Mantacron" width="220" />
+  </picture>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/agents-20-02274a" alt="20 agents" />
+  <img src="https://img.shields.io/badge/commands-21-02274a" alt="21 commands" />
+  <img src="https://img.shields.io/badge/license-Apache%202.0-43c0ca" alt="Apache 2.0" />
+  <img src="https://img.shields.io/badge/works%20with-Claude%20Code%20%C2%B7%20Codex%20%C2%B7%20Gemini%20%C2%B7%20Copilot-02274a" alt="Works with Claude Code, Codex, Gemini CLI, GitHub Copilot" />
 </p>
 
 ```
@@ -13,7 +23,7 @@
 ╚═══════════════════════════════════════════════════════════════════════════════╝
 ```
 
-**20 agents. 21 commands. 2 git hooks. Works on new projects and existing codebases.**
+**Two git hooks. Works on new projects and on existing codebases. No account, and no service to run.**
 
 > Works with **[Claude Code](https://claude.ai/code)**, **[OpenAI Codex](https://github.com/openai/codex)**, **[Google Gemini CLI](https://github.com/google-gemini/gemini-cli)**, and **[GitHub Copilot](https://github.com/features/copilot)**. Git hooks auto-detect whichever CLI is installed.
 
@@ -30,6 +40,43 @@ Manta embeds an automated review team into your git workflow. On every `git comm
 | On demand | All agents | Security scan, blueprint, scaffold, UI generation, test generation |
 
 You don't change how you work. You just stop shipping bugs and secrets.
+
+### What a blocked commit looks like
+
+```console
+$ git commit -m "feat: add referral payouts"
+
+┌─────────────────────────────────────────────────┐
+│           Manta Pre-Commit Review               │
+└─────────────────────────────────────────────────┘
+
+[manta/claude] Reviewing 5 staged file(s)...
+[manta] Shallow scan: 3 signal(s) — running full agent review
+[manta/claude] Running: security-sentinel, code-quality, db-migration-guardian
+
+  CRITICAL  src/routes/payout.ts:42
+            Unparameterised SQL built from req.query.userId · CWE-89
+
+  CRITICAL  migrations/0042_payouts.sql:7
+            NOT NULL added to a 4.2M-row table, no rollback provided
+
+  WARNING   src/routes/payout.ts:19
+            Validation duplicated from src/routes/refund.ts:31
+
+╔═══════════════════════════════════════════════════╗
+║              COMMIT BLOCKED 🚫                    ║
+╚═══════════════════════════════════════════════════╝
+
+2 critical findings
+
+Fix the critical issues above, then commit again.
+Get AI fix suggestions: open Claude Code (/fix) or ask your AI assistant
+
+To bypass (emergency only): SKIP_CLAUDE_REVIEW=1 git commit
+```
+
+The bypass is deliberate. A gate nobody can override is a gate people route
+around — so overriding is one documented variable, and it is logged.
 
 ---
 
@@ -177,18 +224,26 @@ Step 4 — /rpi-implement {slug}  ← phased code with gates, never all at once
 
 ---
 
-## How Much Time Does It Save?
+## What It Costs, and What It Saves
 
-For a solo developer or small team shipping ~10 commits/week, Manta eliminates:
+Two honest numbers first. A commit review takes **minutes, not seconds** — the agents
+read your code rather than lint it — and it bills to **your own AI subscription**, at
+whatever `MANTA_MODEL` you set. Nothing is proxied, and there is no markup.
 
-| Activity | Without Manta | With Manta | Saving |
-|----------|--------------|-----------|--------|
-| Catching security issues before PR | 30–60 min/PR | Instant (pre-commit) | **Most of it** |
-| Writing boilerplate for new features | 30–60 min | ~2 min (`/scaffold`) | **Most of it** |
-| Writing a full feature implementation | 2–4 hrs | ~10 min (`/write`) | **Most of it** |
-| Converting designs to components | 1–3 hrs | ~10 min (`/ui`) | **Most of it** |
-| Keeping docs in sync | 20–30 min | ~2 min (`/update-docs`) | **Most of it** |
-| Understanding a new codebase | 2–4 hrs | ~10 min (`/blueprint`) | **Most of it** |
+What it removes is the mechanical, repeatable half of the work:
+
+| Activity | Without Manta | With Manta |
+|----------|---------------|------------|
+| Security pass before a PR | a careful reviewer, 30–60 min | runs on every commit, unattended |
+| Boilerplate for a new feature | 30–60 min | `/scaffold`, then you write the logic |
+| A complete feature implementation | 2–4 hrs | `/write` — auth, validation, pagination included |
+| Design → components | 1–3 hrs | `/ui` from a screenshot |
+| Docs after a change | 20–30 min | `/update-docs` |
+| Getting oriented in an unfamiliar codebase | 2–4 hrs | `/blueprint` |
+
+The trade is real and worth stating: you are exchanging reviewer time for review
+*latency* on the commit path, and for tokens billed by your provider. `MANTA_MODEL`
+and `--depth` are the two dials that decide how much of each you spend.
 
 ---
 
@@ -388,7 +443,7 @@ git commit -m "chore: update Manta to latest"
 
 ## Suppressing False Positives
 
-Add a `.mantaignore` file to your project root:
+**File-level** — add a `.mantaignore` to your project root:
 
 ```
 # MD5 is fine here — not used for security
@@ -400,6 +455,29 @@ src/generated/**  DRY
 # Suppress all INFO globally
 **  INFO
 ```
+
+Format: `[file-glob]  [keyword-or-severity]  # optional reason`. Suppressions are
+applied by `review-reporter` before any verdict is reported, so every path —
+pre-commit, pre-push, `/review` — honours the same file.
+
+**One line** — when a whole glob is too broad:
+
+```ts
+const hash = md5(data); // manta-ignore: cache key, not a security hash
+```
+
+Use `# manta-ignore:` in Python and shell. Always give a reason — `code-quality`
+reports a suppression without one as a warning of its own.
+
+**A shortcut you intend to revisit** — say so, and say what would make it urgent:
+
+```ts
+// manta-defer: in-memory cache, ceiling: >100 concurrent users, trigger: p95 > 200ms under load
+const cache = new Map();
+```
+
+`/debt` harvests every deferral into a ledger and flags the ones with no trigger —
+those are the shortcuts that quietly become permanent.
 
 ---
 
