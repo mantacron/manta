@@ -439,7 +439,8 @@ const hash = md5(data); // manta-ignore: non-security hash for cache key
 ```
 
 Use `#` for Python and shell. Always include a reason — a suppression without one
-is itself flagged as a WARNING.
+is itself flagged as a WARNING. A comment never suppresses a CRITICAL: those go in
+`.mantaignore`, with a reason, where whoever reviews that file sees them.
 
 **3. Deferrals — record a shortcut instead of hiding it:**
 

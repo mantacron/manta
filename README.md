@@ -469,7 +469,9 @@ const hash = md5(data); // manta-ignore: cache key, not a security hash
 ```
 
 Use `# manta-ignore:` in Python and shell. Always give a reason — `code-quality`
-reports a suppression without one as a warning of its own.
+reports a suppression without one as a warning of its own. A comment never
+suppresses a CRITICAL: those go in `.mantaignore`, with a reason, where whoever
+reviews that file sees them.
 
 **A shortcut you intend to revisit** — say so, and say what would make it urgent:
 

@@ -73,7 +73,9 @@ cat .mantaignore 2>/dev/null
 
 Parse `.mantaignore` if present (skip `#` comment lines and blanks). Each rule is `[file-glob]  [keyword-or-severity]`. For every finding: if its file path matches the glob AND its title/description contains the keyword (or its severity equals the rule's severity), drop it silently.
 
-Also apply inline suppressions: for each finding at `file:line`, read that specific line and drop the finding if it contains `// manta-ignore:` or `# manta-ignore:`.
+Also apply inline suppressions: for each finding at `file:line`, read that specific line and drop the finding if it contains `// manta-ignore:` or `# manta-ignore:` — **except a CRITICAL. A comment never suppresses a CRITICAL.** Findings are anchored to the lines a change touched, so the comment was written in the same change as the code it excuses; for a hardcoded key or an injection that is the finding disguised, not a suppression. Keep the finding and add `(inline manta-ignore refused — a CRITICAL is suppressed only in .mantaignore, with a reason)`.
+
+Report every inline suppression that fired, in every mode, as `INLINE SUPPRESSIONS: <n> — <file:line> "<reason>"; …` on its own line directly after the `SUPPRESSED:` line.
 
 Track the total suppressed — report the count in the output (interactive mode gets a per-rule breakdown; commit/push modes get a single summary line only if the count is non-zero).
 
