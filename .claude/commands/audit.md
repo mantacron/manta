@@ -14,15 +14,23 @@ Accepts `--depth=quick|standard|deep` (default: `standard`). Depth sets the **bu
 and rigor** of each agent — it does not change *which* agents run (that is trigger
 routing, decided separately).
 
-| Depth | Full-file reads/agent | Findings reported | Severities | Model override |
+| Depth | Full-file reads/agent | Findings reported | Severities in full | Model override |
 |-------|----------------------|-------------------|------------|----------------|
-| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL only | `sonnet` for every agent |
+| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL — and each WARNING as one line | `sonnet` for every agent |
 | `standard` | ≤15 | top 10 per severity | CRITICAL + WARNING | agent default (frontmatter) |
 | `deep` | ≤50, trace data flow across files | all findings, no truncation | CRITICAL + WARNING + INFO | `opus` for analysis agents |
 
 Pass the resolved caps into every agent prompt as `READ_CAP` and `FINDING_CAP`, and
 pass the model override (when the depth defines one) as the Agent tool's `model`
 parameter, which takes precedence over the agent's frontmatter.
+
+**A count always has a list behind it.** Depth decides how much detail a
+finding gets, never whether it exists in the report: a severity below the
+depth's "in full" line is still listed, one line per finding — title,
+`file:line`, agent — and only INFO may be reduced to a count. A score is built
+from listed findings only. A quick audit once scored 80/100 on "agent tallies,
+not exhaustively derived findings" — fourteen warnings the report could not
+stand behind — and left its reader little to act on.
 
 `quick` is for triage — "is anything on fire?" — on large repos or in a tight loop.
 `deep` disables truncation and tells agents to follow data flow across file
@@ -92,7 +100,7 @@ Announce:
 
 Launch all applicable agents simultaneously as background tasks. Each agent audits the **full codebase**, not a git diff — but "full codebase" means full *scope*, not reading every file. Include this token budget in every agent prompt, along with the project-map JSON from Step 1:
 
-> **Token budget**: Use the provided project map (`high_risk_files`, `api_files`, `migration_files`, `entry_points`, `stack`) instead of re-discovering the repo. Grep for signal patterns first; read a file in full only when a grep hit needs surrounding context. Cap full-file reads at `READ_CAP` files — prioritize high_risk_files and entry points. Report at most the top `FINDING_CAP` findings per severity level, ranked by impact; summarize the rest as counts. Do not paste file contents into your findings — cite `file:line` instead.
+> **Token budget**: Use the provided project map (`high_risk_files`, `api_files`, `migration_files`, `entry_points`, `stack`) instead of re-discovering the repo. Grep for signal patterns first; read a file in full only when a grep hit needs surrounding context. Cap full-file reads at `READ_CAP` files — prioritize high_risk_files and entry points. Report the top `FINDING_CAP` findings per severity level in full, ranked by impact; list every other CRITICAL and WARNING you found as one line — title, `file:line` — never as a bare count. Only INFO may be summarized as a count. Do not paste file contents into your findings — cite `file:line` instead.
 
 Substitute `READ_CAP` and `FINDING_CAP` with the values the resolved depth defines (see **Review Depth** above; `standard` = 15 and 10). At `--depth=deep`, drop the `FINDING_CAP` sentence entirely and instruct agents to trace data flow across file boundaries rather than stopping at the first grep hit.
 
@@ -125,6 +133,8 @@ Substitute `READ_CAP` and `FINDING_CAP` with the values the resolved depth defin
 ---
 
 ## Step 3 — Deduplicate, Then Calculate Health Score
+
+Score listed findings only: a CRITICAL or WARNING an agent returned as a bare count, with nothing behind it, is not scored — say in the report that the agent's output had that gap rather than deducting for it.
 
 Before scoring, deduplicate across agents: if `security-sentinel` and `code-quality` both flag the same file:line for the same root cause, count it once at the higher severity and note both sources — `(flagged by: security-sentinel, code-quality)`. Only merge genuine overlaps; two different problems on the same line stay separate. Skipping this step double-penalizes the score for issues that just happen to be visible from two angles.
 
@@ -332,13 +342,24 @@ New: [N] · Resolved: [N] · Persistent: [N]
     1. [title] ([file])
     2. [title] ([file])
     3. [title] ([file])
+
+  [When there are no CRITICALs, the top warnings — one line each, up to 10:]
+  Warnings:
+    - [title] — [file:line]
 ```
 
-Then ask:
+Then, when there are CRITICAL or WARNING findings and `--yes`, `--no` or CI
+mode has not already answered it, ask — as the last thing the run prints:
 
-> "Want me to generate fix suggestions for the **[N] critical** findings? I'll read only the flagged files and output concrete, copy-paste-ready fixes."
+```
+Want fix suggestions for the [N] CRITICAL (or, with none, the top WARNING) findings? [Y/n]
+Without an answer nothing more runs — the same suggestions later: /fix reports/[date]-report.md
+```
 
-If yes: invoke the **remediation-agent** with the CRITICAL findings as input. Output to stdout only — no additional file written.
+`--yes` (or `MANTA_ASSUME=yes` in the environment) answers yes without asking;
+`--no` (or `MANTA_ASSUME=no`) skips it.
+
+If yes: invoke the **remediation-agent** with those findings as input. It reads only the flagged files/lines and outputs concrete, copy-paste-ready fixes to stdout — no additional file written.
 
 ---
 

@@ -13,6 +13,7 @@ matches your situation. Everything after that is reference.
 - [Command Reference](#command-reference) — by stage
 - [Controlling Cost and Depth](#controlling-cost-and-depth)
 - [Suppressing Findings](#suppressing-findings)
+- [Running Commands Unattended](#running-commands-unattended)
 - [Troubleshooting](#troubleshooting)
 - [Cheat Sheet](#cheat-sheet)
 
@@ -303,25 +304,32 @@ the git flow.
 
 #### `/review`
 Full interactive review of staged changes, consolidated report saved to
-`reports/`.
+`reports/`. `--range A..B` reviews commits you have made but not pushed.
 ```
 /review
 /review --depth=deep
+/review --range origin/main..HEAD
 ```
 
-#### `/fix [--apply]`
-Concrete fix suggestions for the last blocked commit. Reads only the flagged
-files. `--apply` walks each fix with Y/n and writes to disk.
+#### `/fix [report] [--apply]`
+Concrete fix suggestions for the review that is still stopping you — a blocked
+push, a blocked or warned commit — or for any report you name. It says which
+report it used, and why, before anything else. Reads only the flagged files.
+`--apply` walks each fix with Y/n and writes to disk.
 ```
 /fix
+/fix reports/2026-10-02-110444-push-review.md
 /fix --apply
 ```
 
 #### `/generate-tests [file]`
-Interactive test generation for uncovered code.
+Test generation for uncovered code. Writes test files and nothing else, and
+tests what the code is meant to do: a suspected bug becomes an expected
+failure with the reason, never an assertion that the bug is correct.
 ```
 /generate-tests
 /generate-tests src/billing/proration.ts
+/generate-tests src/billing/proration.ts --yes    # the default choice, no questions
 ```
 
 #### `/pre-commit-review` · `/pre-push-review`
@@ -458,6 +466,25 @@ Run `/debt` to harvest these into a ledger.
 
 > Suppressions are for intentional trade-offs, accepted risk, and false
 > positives — not for hiding real issues.
+
+---
+
+## Running Commands Unattended
+
+Commands run headless too — `claude -p "/blueprint"`, a script, CI. A command
+that would ask a question follows one rule:
+
+- Everything that needs no answer runs first and is printed.
+- `--yes` answers yes without asking; `--no` declines whatever would write and
+  shows what would have been written. `MANTA_ASSUME=yes|no` in the environment
+  does the same for a whole pipeline.
+- With neither, the question is the last thing the run prints, and it says what
+  an unanswered run leaves behind — nothing written — and the exact line to
+  re-run.
+
+`/blueprint`, `/wiki` and `/rpi-implement` ask nothing. `/init existing` and
+`/poc "<name: what it does; main features; stack>"` run without a person;
+`/init` for a new project is an interview and needs one.
 
 ---
 

@@ -37,31 +37,35 @@ Determine mode:
 
 ---
 
-## Step 2 — Announce and Confirm
+## Step 2 — Announce, and keep any hand edits
 
-Tell the user what was detected and what will be generated:
+Running `/blueprint` is the request, so there is no "Proceed?" — a run with
+nobody to answer (`claude -p "/blueprint"`, CI) does exactly what an interactive
+one does. Say what was detected and what will be generated:
 
 **Mode: existing**
-> "Found an existing codebase. I'll scan it and generate `docs/BLUEPRINT.md` with:
-> - Stack summary
-> - Architecture diagram (Mermaid)
-> - API inventory table
-> - DB schema ER diagram (Mermaid)
-> - Backend module map with layer dependency diagram
-> - Frontend component tree
->
-> This may take a moment for large codebases. Proceed? [Y/n]"
+> "Found an existing codebase. Generating `docs/BLUEPRINT.md` with: stack summary,
+> architecture diagram (Mermaid), API inventory, DB schema ER diagram, backend
+> module map with layer dependencies, frontend component tree."
 
 **Mode: spec**
-> "Found `spec/SPEC.md` but no code yet. I'll generate `docs/BLUEPRINT.md` from the spec — a blueprint of what's planned:
-> - Intended stack and architecture
-> - Planned API surface (from Section 4)
-> - Planned data models as ER diagram (from Section 6)
-> - Planned module structure (from Section 2)
->
-> Everything will be marked as **planned/not yet implemented**. Proceed? [Y/n]"
+> "Found `spec/SPEC.md` but no code yet. Generating `docs/BLUEPRINT.md` from the
+> spec — intended stack and architecture, planned API surface, planned data
+> models, planned module structure — every item marked **planned/not yet
+> implemented**."
 
-If user says no: stop.
+A blueprint someone has edited by hand must not be overwritten. Check:
+
+```bash
+git status --porcelain -- docs/BLUEPRINT.md 2>/dev/null
+```
+
+Any output means `docs/BLUEPRINT.md` holds changes git does not have (modified,
+or never committed). Then write the new blueprint to `docs/BLUEPRINT.new.md`
+instead — pass `OUTPUT=docs/BLUEPRINT.new.md` in Step 3 — and say so: "Your
+docs/BLUEPRINT.md has uncommitted edits, so the new blueprint is in
+docs/BLUEPRINT.new.md — compare and replace." A committed blueprint is
+overwritten in place; git still has the old one.
 
 ---
 
@@ -74,7 +78,11 @@ Pass:
 MODE={existing|spec}
 PROJECT_ROOT={current directory}
 DATE={YYYY-MM-DD}
+OUTPUT={docs/BLUEPRINT.md, or docs/BLUEPRINT.new.md from Step 2}
 ```
+
+and tell the agent to write to `OUTPUT` — not to `docs/BLUEPRINT.md` — when the
+two differ.
 
 The agent handles all scanning, diagramming, and file generation.
 
@@ -85,7 +93,7 @@ The agent handles all scanning, diagramming, and file generation.
 After the agent completes, print:
 
 ```
-Blueprint generated: docs/BLUEPRINT.md
+Blueprint generated: {OUTPUT}
 
   Stack:        {detected stack summary}
   Mode:         {existing | spec-only}
@@ -98,4 +106,4 @@ Blueprint generated: docs/BLUEPRINT.md
 Then:
 > "Open `docs/BLUEPRINT.md` to view the full blueprint. Diagrams render in GitHub, VS Code (Markdown Preview), and any Mermaid-compatible viewer.
 >
-> Re-run `/blueprint` anytime to refresh — it overwrites the previous version."
+> Re-run `/blueprint` anytime to refresh — it overwrites a committed blueprint; one with uncommitted edits is kept, and the new one written beside it."

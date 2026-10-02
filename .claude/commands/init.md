@@ -6,8 +6,8 @@ You are a project setup guide.
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║                        M A N T A                            ║
-║          10-agent AI pipeline · automated code review       ║
+║                        M A N T A                             ║
+║       multi-agent review pipeline · automated code review    ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
@@ -17,7 +17,17 @@ Then immediately continue with the mode selection question below.
 
 ## Mode Selection — Ask This First
 
-Say exactly this:
+`/init new` (or `a`) and `/init existing` (or `b`) answer this question up
+front; skip it then.
+
+Mode A is a conversation — an interview, then a preview of every file before it
+is written — and needs a person to answer. Run with nobody to answer
+(`claude -p "/init"`, CI), it asks this question and stops, having written
+nothing; for a project set up in one non-interactive pass, `/poc` takes its three
+answers as arguments. Mode B is an audit and runs unattended:
+`claude -p "/init existing"`.
+
+Otherwise say exactly this:
 
 > "Before we start — which situation fits you best?
 >
@@ -30,10 +40,12 @@ Say exactly this:
 - If **(a)**: continue to the sections below (spec-driven init wizard).
 - If **(b)**: run `/audit` — this runs security-sentinel, code-quality, perf-analyzer, and blueprint-agent in parallel, calculates a health score, and writes `reports/YYYY-MM-DD-report.md` + `docs/BLUEPRINT.md`.
 
-  After audit completes, say:
-  > "Done. Would you like me to detect your team's coding patterns and write them to `PATTERNS.md` + `manta.patterns.json`? These get enforced at pre-commit automatically once committed. [Y/n]"
+  After audit completes, unless `--yes` or `--no` (or `MANTA_ASSUME=yes|no` in
+  the environment) already answered it, say:
+  > "Done. Would you like me to detect your team's coding patterns and write them to `PATTERNS.md` + `manta.patterns.json`? These get enforced at pre-commit automatically once committed. [Y/n]
+  > Without an answer nothing more is written — `/capture-patterns` does it later."
 
-  If yes: run `/capture-patterns`.
+  If yes (or `--yes`): run `/capture-patterns`.
 
 ---
 

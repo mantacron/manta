@@ -10,15 +10,20 @@ Accepts `--depth=quick|standard|deep` (default: `standard`). Depth sets the **bu
 and rigor** of each agent — it does not change *which* agents run (that is trigger
 routing, decided separately).
 
-| Depth | Full-file reads/agent | Findings reported | Severities | Model override |
+| Depth | Full-file reads/agent | Findings reported | Severities in full | Model override |
 |-------|----------------------|-------------------|------------|----------------|
-| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL only | `sonnet` for every agent |
+| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL — and each WARNING as one line | `sonnet` for every agent |
 | `standard` | ≤15 | top 10 per severity | CRITICAL + WARNING | agent default (frontmatter) |
 | `deep` | ≤50, trace data flow across files | all findings, no truncation | CRITICAL + WARNING + INFO | `opus` for analysis agents |
 
 Pass the resolved caps into every agent prompt as `READ_CAP` and `FINDING_CAP`, and
 pass the model override (when the depth defines one) as the Agent tool's `model`
 parameter, which takes precedence over the agent's frontmatter.
+
+**A count always has a list behind it.** Depth decides how much detail a
+finding gets, never whether it is in the report: below the depth's "in full"
+line a finding is still listed, one line — title and `file:line` — and only
+INFO may be reduced to a count.
 
 
 ## Instructions
@@ -124,6 +129,6 @@ Tell the user:
 ```
 Next steps:
   CLEAN             → /audit             include in full health report
-  NEEDS_ATTENTION   → /fix               get fix suggestions for flagged files
+  NEEDS_ATTENTION   → /fix reports/YYYY-MM-DD-security-scan.md   fix suggestions for this scan's findings
   CRITICAL_ISSUES   → address immediately before any commits or releases
 ```

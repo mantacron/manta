@@ -1,6 +1,8 @@
 **Begin by outputting:** `[ Manta — Review · 4 agents ]`
 
-Run a pre-commit review on the staged changes. Orchestrate the 4 core review agents and produce a consolidated report.
+Run a pre-commit review on the staged changes — or, with `--range A..B`
+(e.g. `--range origin/main..HEAD`), on commits you have made but not pushed.
+Orchestrate the 4 core review agents and produce a consolidated report.
 
 ---
 
@@ -12,7 +14,7 @@ routing, decided separately).
 
 | Depth | Full-file reads/agent | Findings reported | Severities | Model override |
 |-------|----------------------|-------------------|------------|----------------|
-| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL only | `sonnet` for every agent |
+| `quick` | ≤5, grep-first only | top 5 per severity | CRITICAL in full; each WARNING as one line | `sonnet` for every agent |
 | `standard` | ≤15 | top 10 per severity | CRITICAL + WARNING | agent default (frontmatter) |
 | `deep` | ≤50, trace data flow across files | all findings, no truncation | CRITICAL + WARNING + INFO | `opus` for analysis agents |
 
@@ -26,6 +28,14 @@ parameter, which takes precedence over the agent's frontmatter.
 You are the **Review Orchestrator**. Run each agent below and hand their findings to `review-reporter` for the final consolidated report.
 
 ### Step 1: Gather Context
+
+The scope is the staged changes, unless `$ARGUMENTS` contains `--range A..B`;
+then it is that commit range, and every `git diff --cached` below — in your
+commands and in each agent's prompt — becomes `git diff A B` (tell each agent the
+exact command). Check the range resolves first (`git rev-parse --verify A B`);
+if it does not, say so and stop. With nothing staged and no range, say
+"Nothing staged — stage files, or pass --range origin/main..HEAD to review
+unpushed commits" and stop.
 
 ```bash
 git diff --cached --name-only
@@ -65,4 +75,10 @@ Relay the reporter's full output to the user. The final line `COMMIT_VERDICT: PA
 After the review (regardless of verdict), check if doc-keeper should update docs:
 - If new features were added: update CHANGELOG and possibly README
 - If APIs changed: README may need updating
-- Ask the user: "Should I update CHANGELOG.md and README.md with these changes? [Y/n]"
+- Then, as the last thing the run prints, ask:
+  "Should I update CHANGELOG.md and README.md with these changes? [Y/n]
+  Without an answer nothing is written — the same later: /update-docs"
+- `--yes` (or `MANTA_ASSUME=yes`) answers yes without asking; `--no` (or
+  `MANTA_ASSUME=no`) skips it. In a headless run (`claude -p`, CI) with neither,
+  nothing is written and the question above is the run's final line, so the
+  person reading the log knows exactly what to run.

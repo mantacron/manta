@@ -34,7 +34,13 @@ and offers a targeted update session rather than starting over.
 
 ## Step 1: Three Questions
 
-Ask all three at once in a single message:
+The arguments can answer them: `/poc "invoice-tracker: tracks unpaid invoices; create, list, mark paid; TypeScript"`.
+When they say what it is, what it does and (optionally) the stack, skip the
+questions and go to Step 2 — that is also how to run `/poc` with nobody to
+answer (`claude -p`, a script). With no arguments and nobody to answer, the run
+asks and stops there, having written nothing.
+
+Otherwise ask all three at once in a single message:
 
 > "Three quick questions and we'll have you set up:
 >
@@ -55,7 +61,9 @@ Based on the answers, pick a stack and confirm it in one shot:
 >
 > Starting setup now — I'll write 4 files and create the directory structure, then commit."
 
-Do not wait for confirmation unless the stack choice is genuinely ambiguous. Move fast.
+Do not wait for confirmation unless the stack choice is genuinely ambiguous — and
+when the answers came as arguments, take the default for the language named
+(the table below) and say which you took, rather than asking. Move fast.
 
 ### Stack Defaults
 
