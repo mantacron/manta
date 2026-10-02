@@ -44,6 +44,25 @@ for f in scripts/*.sh .githooks/*; do
   fi
 done
 
+# macOS still ships bash 3.2, and the hooks, the installer and the scanners run
+# under whatever `bash` a developer has. Associative arrays, namerefs, mapfile,
+# case-folding and the other bash-4 forms fail there — usually as an "invalid
+# option" that stops a `set -e` script. build-project-map.sh carried two unused
+# `declare -A` maps, so on a Mac the project map never built.
+log_step "Shipped shell runs on macOS bash 3.2"
+B4_RE='declare -[Agn]|local -[An]|(^|[^a-z_])(mapfile|readarray|coproc)[[:space:]]|\$\{[A-Za-z_][A-Za-z0-9_]*(,,?|\^\^?)\}|\$\{[A-Za-z_][A-Za-z0-9_]*@[QEPAaUuLK]\}|\$\{[A-Za-z_][A-Za-z0-9_]*\[-[0-9]+\]\}|&>>|\|&|\[\[ -v '
+B4_FILES=()
+for f in .githooks/* scripts/*.sh; do
+  [[ "$f" == scripts/self-test.sh ]] || B4_FILES+=("$f")   # not shipped, and quotes the pattern
+done
+B4_HITS=$(grep -nE "$B4_RE" "${B4_FILES[@]}" 2>/dev/null | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' || true)
+if [[ -z "$B4_HITS" ]]; then
+  log_ok "no bash-4-only syntax in ${#B4_FILES[@]} shipped shell scripts"
+else
+  log_fail "bash-4-only syntax in a shipped script — breaks on macOS bash 3.2:"
+  echo "$B4_HITS" | head -5 | sed 's/^/      /'
+fi
+
 # ─── 2. Banned tokens ─────────────────────────────────────────────────────────
 # Regressions from the 2026-07 Cathy→Manta rename and the legacy /project:
 # command syntax. These tokens must never reappear in tracked files.
@@ -584,13 +603,15 @@ log_step "Model policy and review scope"
 # regressions it guards against — an agent pinned back to a fixed model, the
 # repo-audit-per-commit scope leak, the reporter's stranded verdict block —
 # must fail CI here too.
-mapfile -t _HOOK_AGENTS < <(sed -n '/^HOOK_AGENTS=(/,/^)/p' "$ROOT/scripts/models.sh" \
+# A read loop, not mapfile: a contributor on macOS runs this under bash 3.2.
+_HOOK_AGENTS=()
+while IFS= read -r _a; do _HOOK_AGENTS+=("$_a"); done < <(sed -n '/^HOOK_AGENTS=(/,/^)/p' "$ROOT/scripts/models.sh" \
   | sed '1d;$d' | sed 's/#.*//' | tr ' ' '\n' | sed '/^$/d')
 if [[ ${#_HOOK_AGENTS[@]} -lt 3 ]]; then
   log_fail "could not parse HOOK_AGENTS from scripts/models.sh — the model guard is checking nothing"
 fi
 _POLICY_OK=1
-for agent in "${_HOOK_AGENTS[@]}"; do
+for agent in ${_HOOK_AGENTS[@]+"${_HOOK_AGENTS[@]}"}; do
   f="$ROOT/.claude/agents/$agent.md"
   [[ -f "$f" ]] || continue   # community ships a subset of the enterprise roster
   m=$(grep -m1 '^model:' "$f" | sed 's/^model:[[:space:]]*//' | tr -d '[:space:]')

@@ -66,8 +66,10 @@ MIGRATION_FILES+=$(find . -type f -name "*.py" -path "*/migrations/*" \
 FILE_COUNT=$(echo "$SOURCE_FILES" | grep -c . 2>/dev/null || echo 0)
 
 # ─── Import/dependency extraction (fast grep-based) ──────────────────────────
-# Build import map: for each file, list what it imports from the project
-declare -A IMPORT_MAP
+# Build import map: for each file, list what it imports from the project.
+# (A `declare -A IMPORT_MAP` stood here, never read — and on macOS's bash 3.2 it
+# is an invalid option that stops the script under `set -e`, so the map never
+# built there and every agent re-scanned the repository.)
 
 build_imports() {
   local file="$1"
@@ -103,13 +105,8 @@ ENTRY_POINTS=$(find . -maxdepth 3 -type f \
   -o -name "app.ts" -o -name "server.ts" -o -name "server.js" \) \
   | grep -vE "/(${EXCLUDE_DIRS})/" 2>/dev/null || true)
 
-# ─── File size map (line count as proxy) ─────────────────────────────────────
-declare -A FILE_LINES
-while IFS= read -r f; do
-  [[ -z "$f" ]] && continue
-  lc=$(wc -l < "$f" 2>/dev/null || echo 0)
-  FILE_LINES["$f"]=$lc
-done <<< "$SOURCE_FILES"
+# (Removed: a `declare -A FILE_LINES` loop that ran one `wc -l` per source file
+# into a map nothing read — bash 4 only, so it also stopped the script on macOS.)
 
 # ─── Detect stack ─────────────────────────────────────────────────────────────
 STACK_LANGS=""
