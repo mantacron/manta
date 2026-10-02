@@ -90,7 +90,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE 'git commit.*(--no-verify|-n\\b)'; then echo '[BLOCKED] git commit --no-verify bypasses the pre-commit review pipeline. Use SKIP_MANTA_REVIEW=1 git commit to bypass with logging, or fix the blocking issues and commit normally.' >&2; exit 2; fi"
+            "command": "in=\"$(cat)\"; if printf '%s' \"$in\" | grep -qE 'git commit([[:space:]]+(\\\\\"([^\"\\\\]|\\\\[^\"])*\\\\\"|'\"'\"'[^'\"'\"']*'\"'\"'|[^;&|\"'\"'\"'\\\\[:space:]]+))*[[:space:]]+(--no-verify|-[a-zA-Z]*n[a-zA-Z]*)([[:space:]]|$|[;&|\\\"\\\\])'; then echo '[BLOCKED] git commit --no-verify bypasses the pre-commit review pipeline. Use SKIP_CLAUDE_REVIEW=1 git commit to bypass with logging, or fix the blocking issues and commit normally.' >&2; exit 2; fi"
           }
         ]
       }
@@ -101,7 +101,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(npm install|pip install|cargo add|go get)'; then echo '[hook] Dependency change detected — security-sentinel will scan on next commit'; fi"
+            "command": "in=\"$(cat)\"; if printf '%s' \"$in\" | grep -qE '(npm install|npm i |pnpm add|yarn add|pip install|uv add|poetry add|cargo add|go get)'; then echo '[hook] Dependency change detected — security-sentinel will scan on next commit'; fi"
           }
         ]
       }

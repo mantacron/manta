@@ -467,6 +467,67 @@ rm -f "$HOOK_TMP/called"
   && log_ok "an installed file edited afterwards is reviewed" \
   || log_fail "an edited Manta file was skipped — the skip list must match the exact blob"
 
+# ─── 6d. The Claude Code hooks in .claude/settings.json ──────────────────────
+# The guard against an assistant skipping the gate with `--no-verify` read
+# $CLAUDE_TOOL_INPUT, which Claude Code never sets — tool input arrives as JSON
+# on stdin — so it never fired. Run it the way Claude Code does, on both kinds
+# of case: a bypass must be refused, and `-n` that is not git commit's own flag
+# (inside a message, in a later command) must not be.
+log_step "Claude Code hooks (settings.json)"
+
+settings_hook() {  # $1 = PreToolUse | PostToolUse
+  python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['hooks'][sys.argv[2]][0]['hooks'][0]['command'])" \
+    "$ROOT/.claude/settings.json" "$1" 2>/dev/null
+}
+# The tool input Claude Code sends, as a file to redirect from: a pipe would let
+# a hook that never reads stdin fail its writer under pipefail instead of itself.
+tool_input() {  # $1 = the Bash command → prints the path of the JSON file
+  python3 -c 'import json,sys;print(json.dumps({"tool_input":{"command":sys.argv[1]}}))' "$1" \
+    > "$HOOK_TMP/tool-input.json"
+  echo "$HOOK_TMP/tool-input.json"
+}
+
+GUARD_CMD=$(settings_hook PreToolUse)
+GUARD_BAD=""
+guard_case() {  # $1 = expected exit (2 blocks, 0 allows), $2 = the Bash command
+  local got=0 input
+  input=$(tool_input "$2")
+  bash -c "$GUARD_CMD" < "$input" > /dev/null 2>&1 || got=$?
+  [[ "$got" == "$1" ]] || GUARD_BAD="$GUARD_BAD [$2 → $got]"
+}
+if [[ -n "$GUARD_CMD" ]]; then
+  guard_case 2 'git commit --no-verify -m x'
+  guard_case 2 'git commit -anm x'
+  guard_case 2 'cd repo && git commit -n'
+  guard_case 2 'git commit -m "msg" --no-verify'
+  guard_case 2 "git commit -m 'msg' -n"
+  guard_case 2 'git commit -m "a; b && c" --no-verify'
+  guard_case 0 'git commit -m "msg with --no-verify inside"'
+  guard_case 0 'git commit -m "add -n flag"'
+  guard_case 0 'git commit -F msg.txt && ls -n'
+  guard_case 0 'git commit -F msg.txt | tail -n 5'
+  [[ -z "$GUARD_BAD" ]] \
+    && log_ok "the --no-verify guard blocks every bypass form and nothing else" \
+    || log_fail "the --no-verify guard misjudged:$GUARD_BAD"
+  # The way out it names must be the variable the hook reads.
+  skip_named=$(grep -oE 'SKIP_[A-Z_]+=1' <<< "$GUARD_CMD" | head -1)
+  grep -q "SKIP_VAR=\"${skip_named%=1}\"" "$ROOT/.githooks/pre-commit" \
+    && log_ok "the guard's bypass advice names the variable pre-commit reads ($skip_named)" \
+    || log_fail "the guard tells people to use ${skip_named:-nothing}, which pre-commit does not read"
+else
+  log_fail "no PreToolUse guard in .claude/settings.json — an assistant can commit with --no-verify"
+fi
+
+NOTICE_CMD=$(settings_hook PostToolUse)
+notice_for() { local input; input=$(tool_input "$1"); bash -c "$NOTICE_CMD" < "$input" 2>/dev/null; }
+if [[ -n "$NOTICE_CMD" ]] \
+   && notice_for 'npm install left-pad' | grep -q 'Dependency change detected' \
+   && ! notice_for 'ls -la' | grep -q 'Dependency change detected'; then
+  log_ok "the dependency notice fires on an install and stays quiet otherwise"
+else
+  log_fail "the PostToolUse dependency notice does not read the tool input Claude Code sends"
+fi
+
 # ─── 7. Project-map classification and cache invalidation ─────────────────────
 log_step "Project-map classification (seeded fixture)"
 
