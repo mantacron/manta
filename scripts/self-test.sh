@@ -311,6 +311,162 @@ else
   log_fail "pre-push bypass line lost its SHAs — stdin must be read before the skip check"
 fi
 
+# ─── 6b. What the reviewer may do, and the block both hooks share ────────────
+# Claude Code ignores the allow list in .claude/settings.json until someone has
+# accepted the trust dialog in the folder, which a headless hook run never
+# shows, so the reviewer's grant has to arrive as --allowedTools. The deny list
+# is what stops a diff from asking the reviewer to run its own test script.
+# A shim records exactly what the hook handed the CLI.
+log_step "Reviewer permissions reach the AI CLI"
+
+mkdir -p "$HOOK_TMP/argbin"
+cat > "$HOOK_TMP/argbin/claude" << 'SHIM'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "$FAKE_AI_ARGS"
+printf 'BACKGROUND_TASKS_OFF=%s\n' "${CLAUDE_CODE_DISABLE_BACKGROUND_TASKS:-}" >> "$FAKE_AI_ARGS"
+printf 'COMMIT_VERDICT: PASS\nPUSH_VERDICT: PASS\n'
+SHIM
+chmod +x "$HOOK_TMP/argbin/claude"
+
+perm_problems() {  # $1 = file of recorded args → prints what is missing
+  local f="$1" allow deny
+  allow=$(grep -A1 -x -- '--allowedTools' "$f" 2>/dev/null | tail -1)
+  deny=$(grep -A1 -x -- '--disallowedTools' "$f" 2>/dev/null | tail -1)
+  [[ "$allow" == *'Bash(git diff*)'* && "$allow" == *'Read'* && "$allow" == *'Bash(bash scripts/shallow-scan.sh*)'* ]] \
+    || echo "no read-only --allowedTools grant"
+  local rule
+  for rule in 'WebFetch' 'Bash(curl*)' 'Bash(npm test*)' 'Bash(npm run*)' 'Bash(pytest*)' 'Bash(make*)' \
+              'Bash(git commit*)' 'Bash(git stash*)' 'Bash(git * --output*)' 'Bash(npm audit fix*)' \
+              'Bash(find * -exec*)' 'Write' 'Edit'; do
+    [[ ",$deny," == *",$rule,"* ]] || echo "deny list lacks $rule"
+  done
+  grep -qx 'BACKGROUND_TASKS_OFF=1' "$f" 2>/dev/null \
+    || echo "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 did not reach the CLI"
+}
+
+( cd "$HOOK_TMP/repo" && PATH="$HOOK_TMP/argbin:$PATH" FAKE_AI_ARGS="$HOOK_TMP/commit-args" \
+    bash "$ROOT/.githooks/pre-commit" ) > /dev/null 2>&1
+( cd "$HOOK_TMP/repo" && PATH="$HOOK_TMP/argbin:$PATH" FAKE_AI_ARGS="$HOOK_TMP/push-args" \
+    bash "$ROOT/.githooks/pre-push" <<< "refs/heads/main $PUSH_HEAD refs/heads/main $PUSH_BASE" ) > /dev/null 2>&1
+PERM_BAD=""
+for kind in commit push; do
+  [[ -s "$HOOK_TMP/$kind-args" ]] || { PERM_BAD="$PERM_BAD [$kind: the CLI was never called]"; continue; }
+  while IFS= read -r p; do PERM_BAD="$PERM_BAD [$kind: $p]"; done < <(perm_problems "$HOOK_TMP/$kind-args")
+done
+[[ -z "$PERM_BAD" ]] \
+  && log_ok "both hooks pass the read-only grant, the deny list and foreground agents to claude" \
+  || log_fail "reviewer permissions:$PERM_BAD"
+
+# The two hooks carry one shared block; a fix landing in only one is a gate
+# that is wrong in one direction with nothing else failing.
+shared_block() { sed -n '/^# ═══ Shared hook block/,/^# ═══ End of shared hook block/p' "$1"; }
+if [[ -n "$(shared_block "$ROOT/.githooks/pre-commit")" ]] \
+   && diff <(shared_block "$ROOT/.githooks/pre-commit") <(shared_block "$ROOT/.githooks/pre-push") > /dev/null; then
+  log_ok "pre-commit and pre-push carry the same shared block"
+else
+  log_fail "the shared block differs between pre-commit and pre-push (or is missing) — copy the fix to both"
+fi
+
+# ─── 6c. What the gates review ────────────────────────────────────────────────
+# One definition of "code" for both gates. The push hook once lacked .sh, so a
+# branch changing only shell scripts went out unreviewed; neither had .sql, so a
+# migration-only commit skipped db-migration-guardian; the gate's own config
+# (.mantaignore, settings, agent files) was "non-code" and went through unseen.
+log_step "What the gates review"
+
+mkdir -p "$HOOK_TMP/callbin"
+cat > "$HOOK_TMP/callbin/claude" << 'SHIM'
+#!/usr/bin/env bash
+: > "$FAKE_AI_CALLED"
+printf 'COMMIT_VERDICT: PASS\nPUSH_VERDICT: PASS\n'
+SHIM
+chmod +x "$HOOK_TMP/callbin/claude"
+
+commit_reviews() {  # $1 = path to stage (content written for it) → "reviewed" | "skipped"
+  # A fresh repository per path. Called inside $( ), so a counter would not
+  # survive the subshell — every case would land in the first repository.
+  local repo
+  repo=$(mktemp -d "$HOOK_TMP/filter.XXXXXX")
+  mkdir -p "$repo/$(dirname "$1")"
+  (
+    cd "$repo" && git init -q . \
+      && git config user.email t@t && git config user.name t \
+      && printf '#!/usr/bin/env bash\necho hi\n' > "$1" && chmod +x "$1" \
+      && git add -A
+  ) > /dev/null 2>&1
+  rm -f "$HOOK_TMP/called"
+  ( cd "$repo" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+      bash "$ROOT/.githooks/pre-commit" ) > /dev/null 2>&1
+  [[ -f "$HOOK_TMP/called" ]] && echo reviewed || echo skipped
+}
+
+FILTER_BAD=""
+for p in .mantaignore .claude/settings.json manta.patterns.json .claude/agents/x.md \
+         migrations/001_init.sql templates/page.html infra/main.tf Dockerfile package.json \
+         .githooks/custom-gate scripts/deploy.sh; do
+  [[ "$(commit_reviews "$p")" == reviewed ]] || FILTER_BAD="$FILTER_BAD [$p skipped]"
+done
+for p in README.md docker-compose.yml package-lock.json notes/plan.txt; do
+  [[ "$(commit_reviews "$p")" == skipped ]] || FILTER_BAD="$FILTER_BAD [$p reviewed]"
+done
+[[ -z "$FILTER_BAD" ]] \
+  && log_ok "gate config, migrations, templates, IaC, Dockerfiles, manifests and hooks are reviewed; docs, compose and lockfiles are not" \
+  || log_fail "the commit gate's idea of code is wrong:$FILTER_BAD"
+
+# A push of nothing but a shell script: the push hook's list once lacked .sh.
+(
+  cd "$HOOK_TMP/repo" && git reset -q && git checkout -q -b sh-only \
+    && printf '#!/usr/bin/env bash\necho deploy\n' > deploy.sh && git add deploy.sh && git commit -qm sh
+) > /dev/null 2>&1
+SH_HEAD=$(git -C "$HOOK_TMP/repo" rev-parse HEAD)
+rm -f "$HOOK_TMP/called"
+( cd "$HOOK_TMP/repo" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash "$ROOT/.githooks/pre-push" <<< "refs/heads/sh-only $SH_HEAD refs/heads/sh-only $PUSH_HEAD" ) > /dev/null 2>&1
+[[ -f "$HOOK_TMP/called" ]] \
+  && log_ok "a push that changes only a shell script is reviewed" \
+  || log_fail "a push of only a .sh file skipped review — the push hook's code list lacks .sh"
+
+# A diff git cannot produce is not an empty diff. An unfetched remote commit made
+# `git diff` fail, the pipeline's `|| true` turned that into "no code changed",
+# and the push went out unreviewed.
+rm -f "$HOOK_TMP/called"
+( cd "$HOOK_TMP/repo" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash "$ROOT/.githooks/pre-push" <<< "refs/heads/sh-only $SH_HEAD refs/heads/sh-only 1234567890abcdef1234567890abcdef12345678" ) > /dev/null 2>&1; ec=$?
+[[ $ec -eq 1 && ! -f "$HOOK_TMP/called" ]] \
+  && log_ok "an unreadable branch diff blocks the push (fail-closed)" \
+  || log_fail "an unreadable branch diff exited $ec — it must block, not pass as 'no code'"
+
+# `git push origin :old-branch sh-only` sends the deletion first. Reading only
+# the first line let the real branch through behind it, unreviewed.
+rm -f "$HOOK_TMP/called"
+( cd "$HOOK_TMP/repo" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash "$ROOT/.githooks/pre-push" <<< "(delete) 0000000000000000000000000000000000000000 refs/heads/old $PUSH_BASE
+refs/heads/sh-only $SH_HEAD refs/heads/sh-only $PUSH_HEAD" ) > /dev/null 2>&1; ec=$?
+[[ $ec -eq 0 && -f "$HOOK_TMP/called" ]] \
+  && log_ok "a branch deletion pushed beside a real branch does not carry it past review" \
+  || log_fail "a deletion line first let the pushed branch through unreviewed (exit $ec)"
+
+# The install commit carries only Manta's own files; reviewing them is reviewing
+# Manta, at the developer's expense. They are skipped while byte-identical to
+# what install.sh wrote on this machine — and an edited one is reviewed again.
+# Uses the project section 4 installed into.
+( cd "$TMP_PROJECT" && git add -A ) > /dev/null 2>&1
+rm -f "$HOOK_TMP/called"
+SKIP_OUT=$( cd "$TMP_PROJECT" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash .githooks/pre-commit 2>&1 )
+if [[ ! -f "$HOOK_TMP/called" ]] && grep -q "Manta file(s) exactly as installed" <<< "$SKIP_OUT"; then
+  log_ok "the install commit's Manta files are skipped while unchanged"
+else
+  log_fail "the install commit was reviewed — installed-blobs.tsv missing or not honoured"
+fi
+( cd "$TMP_PROJECT" && echo "# edited after install" >> scripts/models.sh && git add scripts/models.sh ) > /dev/null 2>&1
+rm -f "$HOOK_TMP/called"
+( cd "$TMP_PROJECT" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash .githooks/pre-commit ) > /dev/null 2>&1
+[[ -f "$HOOK_TMP/called" ]] \
+  && log_ok "an installed file edited afterwards is reviewed" \
+  || log_fail "an edited Manta file was skipped — the skip list must match the exact blob"
+
 # ─── 7. Project-map classification and cache invalidation ─────────────────────
 log_step "Project-map classification (seeded fixture)"
 

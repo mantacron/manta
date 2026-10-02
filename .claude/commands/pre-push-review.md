@@ -52,6 +52,8 @@ The reporter applies `.mantaignore` + inline `manta-ignore` suppressions, dedupl
 
 Output the review-reporter's result **verbatim** as your final output — the git hook parses it. Do not add anything after the verdict lines.
 
+The hook sees **only your last message**. If anything reaches you after you have relayed the verdict (a late notification, a duplicate hand-back), answer it by outputting the same block again, verbatim — never with an acknowledgement such as "already relayed". A last message without the verdict lines fails the push closed.
+
 If review-reporter fails or times out, fail closed (push-time blocks on warnings by design): output the raw agent statuses, then `PUSH_VERDICT: WARN` and `BLOCK_REASON: review-reporter unavailable — findings not synthesized, review manually`.
 
 ### Rules

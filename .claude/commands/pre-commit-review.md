@@ -122,13 +122,15 @@ The reporter applies `.mantaignore` + inline `manta-ignore` suppressions, dedupl
 
 Output the review-reporter's result **verbatim** as your final output — the git hook parses it. Do not add anything after the verdict lines.
 
+The hook sees **only your last message**. If anything reaches you after you have relayed the verdict (a late notification, a duplicate hand-back), answer it by outputting the same block again, verbatim — never with an acknowledgement such as "already relayed".
+
 If review-reporter fails or times out, fail open with maximum visibility: output the raw agent statuses, then `COMMIT_VERDICT: WARN` and `BLOCK_REASON: review-reporter unavailable — findings not synthesized, review manually`.
 
 ### Rules
 
 - Be fast — this runs on every commit
 - CRITICAL findings block the commit (`COMMIT_VERDICT: BLOCK`)
-- WARNING findings allow the commit but are shown prominently (`COMMIT_VERDICT: WARN`) — they will block at push time
+- WARNING findings allow the commit but are shown prominently (`COMMIT_VERDICT: WARN`) — whether one blocks the push is the push review's rule (`pre-push-review.md`), not this gate's
 - INFO findings never affect the verdict
 - TIMEOUT agents are noted but do not block the commit
 - The last two lines must always be `COMMIT_VERDICT: PASS`, `COMMIT_VERDICT: BLOCK`, or `COMMIT_VERDICT: WARN` followed by `BLOCK_REASON`

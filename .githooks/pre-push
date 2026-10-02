@@ -16,12 +16,18 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 RESET='\033[0m'
 
+# ═══ Shared hook block — identical in .githooks/pre-commit and pre-push ══════
+# The free edition ships no hook library, so both hooks carry this block and
+# scripts/self-test.sh fails when the two copies differ. A fix that reaches one
+# gate and not the other leaves that gate wrong with nothing failing — which is
+# how the push hook came to skip the shell scripts the commit hook reviewed.
+
 # ─── AI tool detection ────────────────────────────────────────────────────────
 # Supports: Claude Code (claude), OpenAI Codex CLI (codex), Google Gemini CLI (gemini)
-# Override with: AI_BIN=gemini git push
+# Override with: AI_BIN=gemini git commit|push
 # Model override: MANTA_MODEL=opus git commit|push (default: sonnet — review agents pin
 # their own models in frontmatter; this only sets the orchestrator's model)
-# Legacy override: CLAUDE_BIN=claude git push
+# Legacy override: CLAUDE_BIN=claude git commit|push
 
 detect_ai_tool() {
   if [[ -n "${AI_BIN:-}" ]] && command -v "$AI_BIN" &>/dev/null; then
@@ -36,30 +42,167 @@ detect_ai_tool() {
   echo ""
 }
 
+# ─── What a reviewer may not do ───────────────────────────────────────────────
 # The reviewer reads the diff, and the diff is written by whoever opened the
 # change. Denying the two tools whose purpose is reaching a URL means a line of
 # code cannot ask the reviewer to post this machine's environment somewhere.
-# Bash stays: the review shells out to git and to package managers, which is the
-# review itself.
-MANTA_REVIEW_DENIED_TOOLS="${MANTA_REVIEW_DENIED_TOOLS:-WebFetch,WebSearch}"
+#
+# Those two alone were the front door with the side door open. In a folder
+# someone has trusted, the headless reviewer also inherits the allow list in
+# .claude/settings.json, written for interactive commands: `npm run`, `npm test`,
+# `pytest`, `make test`, `git add`, `git commit`, `git stash`, `find`. A diff
+# could add a test script and ask the reviewer to run it. So those are denied
+# here by name and shape. Bash itself stays: the review runs git and the
+# dependency auditors. A deny beats every allow, from the settings or the flag.
+#
+# This applies to the `claude` branch only — `codex` and `gemini` run with no
+# equivalent restriction.
+_MANTA_REVIEW_DENY_DEFAULT="WebFetch,WebSearch"
+# Egress: anything whose purpose is reaching the network.
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(curl*),Bash(timeout * curl*),Bash(wget*),Bash(timeout * wget*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(nc*),Bash(timeout * nc*),Bash(ncat*),Bash(telnet*),Bash(ssh*),Bash(scp*)"
+# Running repository code: a package script or a test suite executes whatever
+# the diff put there. `npm audit` is not in this list and stays reachable.
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(npm run*),Bash(npm test*),Bash(npm start*),Bash(npx*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(pnpm run*),Bash(pnpm test*),Bash(yarn*),Bash(make*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(pytest*),Bash(python -m pytest*),Bash(go test*),Bash(cargo test*),Bash(bundle exec*)"
+# Privilege escalation and package installation.
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(sudo*),Bash(apt-get*),Bash(dnf*),Bash(brew*)"
+# Mutation — of history, the working tree or git's config. A reviewer that can
+# commit is not a reviewer, and no review in this edition writes a file: the
+# hook saves the report itself.
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(git add*),Bash(git commit*),Bash(git push*),Bash(git config*),Bash(git stash*),Bash(git init*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(git branch -d*),Bash(git branch -D*),Bash(git branch --delete*),Bash(git branch -m*),Bash(git branch -M*),Bash(git branch -f*),Bash(git branch --force*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(bash scripts/setup.sh*),Bash(touch*),Bash(mkdir*),Bash(chmod*),Write,Edit,NotebookEdit"
+# Write-capable flags of the commands granted by prefix below.
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(git * --output*),Bash(semgrep * --autofix*),Bash(semgrep * --output*),Bash(semgrep * -o*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(npm audit fix*),Bash(pnpm audit --fix*),Bash(pnpm audit * --fix*),Bash(pip-audit --fix*),Bash(pip-audit * --fix*),Bash(cargo audit fix*)"
+_MANTA_REVIEW_DENY_DEFAULT+=",Bash(find * -exec*),Bash(find * -execdir*),Bash(find * -delete*),Bash(find * -ok*)"
+MANTA_REVIEW_DENIED_TOOLS="${MANTA_REVIEW_DENIED_TOOLS:-$_MANTA_REVIEW_DENY_DEFAULT}"
+
+# ─── What a reviewer may do, passed on the command line ──────────────────────
+# Claude Code ignores every permissions.allow entry in .claude/settings.json
+# until someone has opened `claude` in the folder and accepted the trust dialog,
+# and a headless hook run never shows that dialog. On a fresh clone or a
+# teammate's machine the reviewer's `git diff --cached` was refused, and the
+# review came back thinner with no error. A rule passed with --allowedTools
+# applies whatever the trust state, so the grant travels with the command.
+#
+# Reads, search and listing, the dependency auditors security-sentinel runs, and
+# the two Manta scanners the orchestrators call — nothing that writes. A prefix
+# rule grants every flag after it, so the write-capable flags are denied above
+# rather than trusted to go unused. `find` is not granted: Glob and Grep cover
+# every lookup a reviewer makes.
+_MANTA_REVIEW_ALLOW_DEFAULT="Read,Grep,Glob"
+_MANTA_REVIEW_ALLOW_DEFAULT+=",Bash(git diff*),Bash(git log*),Bash(git show*),Bash(git status*),Bash(git blame*)"
+_MANTA_REVIEW_ALLOW_DEFAULT+=",Bash(git ls-files*),Bash(git rev-parse*),Bash(git cat-file*)"
+_MANTA_REVIEW_ALLOW_DEFAULT+=",Bash(grep*),Bash(ls *),Bash(wc -l*),Bash(head *),Bash(tail *),Bash(cat .mantaignore*),Bash(cat ../.mantaignore*)"
+_MANTA_REVIEW_ALLOW_DEFAULT+=",Bash(npm audit*),Bash(pnpm audit*),Bash(pip-audit*),Bash(govulncheck*),Bash(cargo audit*),Bash(bundle audit*),Bash(semgrep*)"
+_MANTA_REVIEW_ALLOW_DEFAULT+=",Bash(bash scripts/build-project-map.sh*),Bash(bash scripts/shallow-scan.sh*)"
+MANTA_REVIEW_ALLOWED_TOOLS="${MANTA_REVIEW_ALLOWED_TOOLS:-$_MANTA_REVIEW_ALLOW_DEFAULT}"
+
+# ─── Review agents answer in the foreground ──────────────────────────────────
+# The orchestrator dispatches its agents with the Agent tool, which runs them in
+# the background by default. A background agent reports twice — its hand-back
+# and a completion notification — and an orchestrator that answers the second
+# with "already relayed" leaves the hook a last message with no verdict in it,
+# so a passing review fails closed (5 of 10 runs, measured on the Enterprise
+# push gate). With background tasks off an agent's report is its tool result;
+# agents called in one turn still run concurrently.
+MANTA_REVIEW_ENV="CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1"
 
 run_ai_review() {
   local tool="$1"
   local prompt="$2"
-  local hook_timeout="${3:-180}"
+  local hook_timeout="${3:-480}"
   case "$tool" in
     # `--` before the prompt is load-bearing: --disallowedTools takes a *list*,
     # so a bare prompt immediately after it is parsed as more deny rules. The
     # gate caught this by failing closed on "Permission deny rule '##' matches
     # no known tool" — every review would have errored, which is the right
     # failure but an expensive one to debug from the message alone.
-    claude) timeout "$hook_timeout" claude --print --model "${MANTA_MODEL:-sonnet}" \
+    claude) env $MANTA_REVIEW_ENV timeout "$hook_timeout" claude --print --model "${MANTA_MODEL:-sonnet}" \
+              --allowedTools "$MANTA_REVIEW_ALLOWED_TOOLS" \
               --disallowedTools "$MANTA_REVIEW_DENIED_TOOLS" -- "$prompt" 2>&1 ;;
     codex)  timeout "$hook_timeout" codex -q "$prompt" 2>&1 ;;
     gemini) timeout "$hook_timeout" gemini -p "$prompt" 2>&1 ;;
     *)      return 1 ;;
   esac
 }
+
+# ─── What counts as code ──────────────────────────────────────────────────────
+# One definition for both gates. They had drifted: the push hook's list lacked
+# .sh, .mjs, .cjs, .swift, .h and .hpp, so a branch that changed only shell
+# scripts — these hooks and the installer among them — went out unreviewed while
+# the same files were reviewed at commit. Neither list had .sql, so a commit of
+# nothing but a migration skipped db-migration-guardian, the agent that exists
+# for it.
+#
+# Templates render user data, which is where XSS lives; Terraform and HCL are
+# infrastructure. Some paths are code whatever their extension: CI workflows
+# (they run with credentials on every push), the gate's own configuration — a
+# .mantaignore rule hides findings repo-wide, the settings decide what a
+# reviewer may do, an agent or command file *is* the reviewer — Dockerfiles, and
+# dependency manifests, where a supply-chain change enters. Each was "non-code",
+# so a commit of one printed "skipping code review" and went through unseen.
+# Lockfiles (machine-written, huge) and compose files (general YAML — admitting
+# all YAML would route a full review on every config touch) stay out.
+MANTA_CODE_RE='\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|rb|java|kt|swift|c|cpp|h|hpp|cs|php|sh|bash|sql|html|htm|vue|svelte|astro|tf|hcl)$'
+MANTA_CODE_PATH_RE='(^|/)\.github/workflows/[^/]+\.(yml|yaml)$|(^|/)\.mantaignore$|(^|/)\.claude/settings(\.local)?\.json$|(^|/)manta\.patterns\.json$|(^|/)\.claude/(agents|commands)/[^/]+\.md$|(^|/)Dockerfile(\.[A-Za-z0-9_-]+)?$|(^|/)(package\.json|requirements[A-Za-z0-9_.-]*\.txt|pyproject\.toml|Pipfile|go\.mod|Cargo\.toml|Gemfile|pom\.xml|build\.gradle(\.kts)?|composer\.json)$'
+
+# Filters a newline-separated path list on stdin down to the reviewable paths.
+# An extensionless file counts when it is executable and starts with a shebang:
+# a git hook, a bin/ command. The basename is tested, not the path — `*.*`
+# against the whole path discards .githooks/pre-commit for living under a
+# dotted directory.
+manta_code_files() {
+  local path abs root="${GIT_ROOT:-.}"
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    if [[ "$path" =~ $MANTA_CODE_RE || "$path" =~ $MANTA_CODE_PATH_RE ]]; then
+      printf '%s\n' "$path"
+      continue
+    fi
+    [[ "${path##*/}" == *.* ]] && continue
+    abs="$path"
+    [[ "$abs" != /* ]] && abs="$root/$path"
+    if [[ -f "$abs" && -x "$abs" && "$(head -c2 "$abs" 2>/dev/null)" == '#!' ]]; then
+      printf '%s\n' "$path"
+    fi
+  done
+}
+
+# ─── Manta's own files, exactly as installed ──────────────────────────────────
+# Filters a path list on stdin, dropping each path whose content in `$1` —
+# "staged" for the index, or a commit for a push — is byte-identical to the blob
+# scripts/install.sh recorded on this machine in .manta-cache/installed-blobs.tsv.
+# Only the install or update commit carries those files unchanged, and reviewing
+# them is reviewing Manta rather than the change: some forty agent and command
+# files on the developer's own AI bill, at commit and again at push. An edited
+# file has a different blob and is reviewed. No list (another clone, CI) keeps
+# everything. The list is local and git-ignored: a hash a teammate could commit
+# is a hash a teammate could forge. No associative arrays — macOS ships bash 3.2.
+manta_drop_installed_files() {  # $1 = "staged" | <commit>
+  local where="$1" list="${MANTA_DIR:-.}/.manta-cache/installed-blobs.tsv" path blob recorded
+  if [[ ! -s "$list" || -L "$list" ]]; then
+    cat
+    return 0
+  fi
+  while IFS= read -r path; do
+    [[ -n "$path" ]] || continue
+    recorded="$(awk -F'\t' -v p="$path" '$2 == p { print $1; exit }' "$list" 2>/dev/null)"
+    if [[ -n "$recorded" ]]; then
+      if [[ "$where" == "staged" ]]; then
+        blob="$(git -C "$GIT_ROOT" rev-parse -q --verify ":$path" 2>/dev/null || true)"
+      else
+        blob="$(git -C "$GIT_ROOT" rev-parse -q --verify "$where:$path" 2>/dev/null || true)"
+      fi
+      [[ -n "$blob" && "$blob" == "$recorded" ]] && continue
+    fi
+    printf '%s\n' "$path"
+  done
+}
+# ═══ End of shared hook block ════════════════════════════════════════════════
 
 AI_TOOL=$(detect_ai_tool)
 
@@ -103,8 +246,17 @@ log_review_failure() {
 # and then exiting 0 is correct hook protocol; not consuming it is the riskier
 # behaviour.
 PUSH_INFO=$(cat)
-LOCAL_SHA=$(echo "$PUSH_INFO" | awk '{print $2}' | head -1)
-REMOTE_SHA=$(echo "$PUSH_INFO" | awk '{print $4}' | head -1)
+
+# Refs that carry commits to review. A branch deletion arrives as
+# `(delete) 0000… <remote-ref> <remote-sha>`: it has no code, and
+# `git diff <sha> 0000…` cannot run. Deletions are filtered, not detected on the
+# first line — `git push origin :old-branch main` sends both in one invocation,
+# and taking the first line used to let `main` through behind the deletion with
+# no review at all.
+PUSH_REFS=$(printf '%s\n' "$PUSH_INFO" \
+  | awk 'NF && $2 != "0000000000000000000000000000000000000000"')
+LOCAL_SHA=$(echo "$PUSH_REFS" | awk '{print $2}' | head -1)
+REMOTE_SHA=$(echo "$PUSH_REFS" | awk '{print $4}' | head -1)
 
 # Handle new branch (remote SHA is all zeros)
 if [[ "$REMOTE_SHA" == "0000000000000000000000000000000000000000" ]]; then
@@ -133,7 +285,34 @@ if [[ -z "$REMOTE_SHA" ]]; then
 fi
 
 # ─── Check if there are code changes ─────────────────────────────────────────
-CHANGED_FILES=$(git diff --name-only "$REMOTE_SHA" "$LOCAL_SHA" 2>/dev/null | grep -E '\.(ts|tsx|js|jsx|py|go|rs|rb|java|kt|c|cpp|cs|php)$' || true)
+# The diff is taken on its own line, not piped straight into the filter, so a
+# git failure stays distinguishable from an empty result. As one pipeline ending
+# in `|| true`, a failing `git diff` (a remote SHA never fetched, a shallow
+# clone) came back empty, which reads as "no code changed" — and the push went
+# out with no review and no record of one.
+if ! CHANGED_RAW=$(git diff --name-only "$REMOTE_SHA" "$LOCAL_SHA" 2>&1); then
+  echo ""
+  echo -e "${RED}${BOLD}[manta] Cannot read the branch diff — push BLOCKED (fail-closed)${RESET}"
+  echo "         git: ${CHANGED_RAW}"
+  echo "         Without a diff there is nothing to review, so this push cannot be"
+  echo "         cleared. Usually a shallow clone or an unfetched remote commit."
+  echo "         Fix: git fetch origin   (or: git fetch --unshallow)"
+  echo "         Bypass (emergency only, logged): SKIP_CLAUDE_PUSH_REVIEW=1 git push"
+  # Logged after the explanation, so an unwritable reports/ cannot swallow it.
+  log_review_failure "cannot diff ${REMOTE_SHA}..${LOCAL_SHA}" || true
+  exit 1
+fi
+
+# Only now that the diff is known good may an empty result mean "no code".
+CHANGED_FILES=$(printf '%s\n' "$CHANGED_RAW" | manta_code_files || true)
+# Manta's own files as the installer wrote them, at the pushed tip — see
+# manta_drop_installed_files.
+_manta_before=$(printf '%s' "$CHANGED_FILES" | grep -c . || true)
+CHANGED_FILES=$(printf '%s\n' "$CHANGED_FILES" | manta_drop_installed_files "$LOCAL_SHA" || true)
+_manta_installed_skipped=$(( _manta_before - $(printf '%s' "$CHANGED_FILES" | grep -c . || true) ))
+if (( _manta_installed_skipped > 0 )); then
+  echo -e "${CYAN}[manta]${RESET} ${_manta_installed_skipped} Manta file(s) exactly as installed — not reviewed (edited ones are)"
+fi
 
 if [[ -z "$CHANGED_FILES" ]]; then
   exit 0
@@ -154,6 +333,11 @@ echo ""
 export LOCAL_SHA REMOTE_SHA
 
 PROMPT=$(cat "$MANTA_DIR/.claude/commands/pre-push-review.md" 2>/dev/null || echo "Review the branch diff for CRITICAL issues across security, code quality, and performance. Output PUSH_VERDICT: PASS or PUSH_VERDICT: BLOCK.")
+# The orchestrator lists the range's files itself, and would hand the agents the
+# Manta files this hook just set aside. Name the ones that are under review.
+if (( _manta_installed_skipped > 0 )); then
+  PROMPT+=$'\n\n## Files to review\n\n'"Review only these changed files — the rest of the range is non-code or Manta's own files exactly as its installer wrote them (${_manta_installed_skipped} skipped). Scope every diff to them: git diff \$REMOTE_SHA \$LOCAL_SHA -- <paths>."$'\n'"${CHANGED_FILES}"
+fi
 
 # ─── Run AI review ────────────────────────────────────────────────────────────
 SCAN_OUTPUT=""

@@ -22,6 +22,9 @@ REPO="${REPO:-mantacron/manta}"
 BRANCH="${BRANCH:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 FORCE=false
+# Every path install_file wrote this run — the only files the gate may later
+# skip as "Manta's own, unchanged" (see the end of this script).
+INSTALLER_WROTE=()
 
 for arg in "$@"; do
   [[ "$arg" == "--force" ]] && FORCE=true
@@ -91,6 +94,7 @@ install_file() {
     fi
   fi
 
+  INSTALLER_WROTE+=("$dst")
   log_ok "$label"
 }
 
@@ -380,6 +384,50 @@ EOF
 else
   log_warn "Skipped — not a git repo. Run after git init:"
   log_info "  git config core.hooksPath .githooks"
+fi
+
+# ─── What this run wrote, byte for byte ───────────────────────────────────────
+# The install or update commit is the one commit that carries Manta's own files,
+# and the gate would review every one of them — some forty agent and command
+# files, the hooks and the scripts — on the developer's own AI bill, at commit
+# and again at push. The hooks skip a file only while its staged content is
+# still the exact blob recorded here, so an edit to an installed file is
+# reviewed like any other change.
+#
+# Kept in .manta-cache (git-ignored, local to this machine), never committed: a
+# hash a teammate could commit is a hash a teammate could forge, and this list
+# must only ever say "the installer on this machine wrote exactly this". A clone
+# without it — another developer, CI — reviews the update in full.
+if git rev-parse --git-dir &>/dev/null; then
+  mkdir -p .manta-cache
+  INSTALLED_BLOBS=".manta-cache/installed-blobs.tsv"
+  # Paths as git names them: relative to the repository root, which in
+  # subdirectory mode is not this directory.
+  _prefix="$(git rev-parse --show-prefix 2>/dev/null || true)"
+  # Temp files and awk rather than associative arrays: macOS ships bash 3.2.
+  _kept="$(mktemp)"; _fresh="$(mktemp)"
+  # An entry from an earlier run survives only while the file still holds the
+  # blob recorded then — a file edited since, and kept by this run, drops out.
+  if [[ -f "$INSTALLED_BLOBS" && ! -L "$INSTALLED_BLOBS" ]]; then
+    while IFS=$'\t' read -r _blob _path; do
+      _local="${_path#"$_prefix"}"
+      [[ -n "$_blob" && -f "$_local" ]] || continue
+      [[ "$(git hash-object -- "$_local" 2>/dev/null)" == "$_blob" ]] \
+        && printf '%s\t%s\n' "$_blob" "$_path" >> "$_kept"
+    done < "$INSTALLED_BLOBS"
+  fi
+  # Only what this run wrote. Hashing whatever is on disk would vouch for a file
+  # the installer skipped because the developer already had their own.
+  for _path in ${INSTALLER_WROTE[@]+"${INSTALLER_WROTE[@]}"}; do
+    [[ -f "$_path" ]] || continue
+    _blob="$(git hash-object -- "$_path" 2>/dev/null)" || continue
+    printf '%s\t%s%s\n' "$_blob" "$_prefix" "$_path" >> "$_fresh"
+  done
+  # Fresh entries win; kept ones fill in the paths this run did not rewrite.
+  awk -F'\t' 'NR == FNR { seen[$2] = 1; print; next } !($2 in seen)' "$_fresh" "$_kept" > "$INSTALLED_BLOBS.tmp"
+  rm -f "$_kept" "$_fresh"
+  mv "$INSTALLED_BLOBS.tmp" "$INSTALLED_BLOBS"
+  log_ok "$INSTALLED_BLOBS — Manta's files exactly as installed, skipped by the gate until edited"
 fi
 
 # ─── Summary ──────────────────────────────────────────────────────────────────
