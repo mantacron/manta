@@ -99,14 +99,37 @@ HAS_MIGRATIONS=""
 [[ -n "$MIGRATION_FILES" ]] && HAS_MIGRATIONS="true"
 
 # ─── Routing signals: new API routes and new symbols ─────────────────────────
-# Used by pre-push to trigger-route observability-guardian and test-architect.
+# Enterprise's push review routes observability-guardian and test-architect on
+# these. This edition's push roster has neither agent, so here they are printed
+# and persisted, not acted on — and kept as accurate as Enterprise's, so the two
+# scanners agree about the same diff.
 ADDED_LINES=$(echo "$SCAN_DIFF" | grep -E "^\+" | grep -Ev "^\+\+\+" || true)
 
+# Here-strings, not `echo | grep -q`. grep -q exits on its first match, the
+# echo still writing into the pipe dies of SIGPIPE, and under pipefail the
+# pipeline reports 141 — so a large diff with a route near the top read as "no
+# routes" and "no new symbols".
 HAS_API_ROUTES=""
-echo "$ADDED_LINES" | grep -Eq "(router\.(get|post|put|delete|patch|use)\(|app\.(get|post|put|delete|patch|use)\(|@(Get|Post|Put|Delete|Patch|Route)\(|\.route\(|@app\.route|fastapi\.(get|post|put|delete)|express\.Router)" && HAS_API_ROUTES="true"
+grep -Eq "(router\.(get|post|put|delete|patch|use)\(|app\.(get|post|put|delete|patch|use)\(|@(Get|Post|Put|Delete|Patch|Route)\(|\.route\(|@app\.route|fastapi\.(get|post|put|delete)|express\.Router)" <<<"$ADDED_LINES" && HAS_API_ROUTES="true"
+# Next.js App Router handlers are exported by method name from route.ts, with no
+# router call anywhere, so the pattern above never saw them.
+grep -Eq "^\+[[:space:]]*export (async function|function|const) (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b" <<<"$ADDED_LINES" && HAS_API_ROUTES="true"
 
 HAS_NEW_SYMBOLS=""
-echo "$ADDED_LINES" | grep -Eq "^\+(def |async def |function |class |export (default |async )?function|public (static |async )?(void|[A-Z][a-zA-Z]+))" && HAS_NEW_SYMBOLS="true"
+# Indentation allowed: a method on a class (`    def refund(self)`) is as new as
+# a top-level function, and anchoring at column 0 missed every new method. Go
+# `func`, Rust `fn`, access-modified methods (C#, Java, Kotlin) and arrow
+# functions bound to a name count too. JS class methods stay out: `name() {`
+# cannot be told from `if (x) {` by a regex.
+#
+# The type-name bracket expression is `[]A-Za-z<>[,]` — `]` first, and no
+# backslashes. POSIX bracket expressions have no escapes: written as
+# `[A-Za-z<>\[\],]` the class closes early and no access-modified method ever
+# matches.
+grep -Eq "^\+[[:space:]]*(def |async def |function |class |func |(pub(\([a-z]+\))? )?(async )?fn |export (default |async )?function|(public|private|protected|internal)( static| async| override)* []A-Za-z<>[,]+ [A-Za-z_][A-Za-z0-9_]*\(|(export )?(const|let) [A-Za-z_\$][A-Za-z0-9_\$]* = (async )?(\([^)]*\)|[A-Za-z_\$][A-Za-z0-9_\$]*) =>)" <<<"$ADDED_LINES" && HAS_NEW_SYMBOLS="true"
+# A route is new behaviour even when its handler is an inline arrow function —
+# `router.patch('/:id', (req, res) => …)` declares no named symbol.
+[[ -n "$HAS_API_ROUTES" ]] && HAS_NEW_SYMBOLS="true"
 
 # ─── Zero-trust surface detection ────────────────────────────────────────────
 # zero-trust-guardian has the largest agent prompt of the push set, so route it

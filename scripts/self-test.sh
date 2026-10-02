@@ -209,6 +209,54 @@ else
   echo "$SCAN_OUTPUT" | tail -5 | sed 's/^/      /'
 fi
 
+# ─── 5b. Routing signals: new routes and new symbols ─────────────────────────
+# Enterprise routes test-architect and observability-guardian on these flags;
+# here they are printed and persisted, and must say the same about a diff.
+log_step "Shallow-scan routing signals"
+
+scan_fixture() {  # $1 = setup commands run inside a fresh repo → prints scanner output
+  local repo
+  repo=$(mktemp -d "$HOOK_TMP/rf.XXXXXX")
+  ( cd "$repo" && git init -q . && git config user.email t@t && git config user.name t && eval "$1" ) > /dev/null 2>&1
+  ( cd "$repo" && bash "$ROOT/scripts/shallow-scan.sh" 2>/dev/null || true )
+}
+RF_BAD=""
+# A large diff with a route near the top. `echo "$ADDED_LINES" | grep -q` let
+# grep exit on its first match while echo was still writing; echo died of
+# SIGPIPE, pipefail made the match 141, and both flags read false. (The filler
+# comes from awk, not `yes | head` — under pipefail that is the same bug.)
+out=$(scan_fixture 'mkdir -p src && printf "def handler():\n    pass\nrouter.get(\"/x\", handler)\n" > src/a_api.py \
+  && awk "BEGIN { for (i = 0; i < 100000; i++) print \"filler = 1\" }" > src/z_big.py && git add -A')
+grep -q '^HAS_API_ROUTES: true' <<< "$out" && grep -q '^HAS_NEW_SYMBOLS: true' <<< "$out" \
+  || RF_BAD="$RF_BAD [a large diff lost its route/symbol flags]"
+# A route whose handler is an inline arrow declares no named symbol.
+out=$(scan_fixture "mkdir -p src && printf \"router.patch('/:id/status', (req, res) => res.json({}));\n\" > src/routes.js && git add -A")
+grep -q '^HAS_NEW_SYMBOLS: true' <<< "$out" || RF_BAD="$RF_BAD [an inline-handler route is not new behaviour]"
+# A Next.js App Router handler is an exported method name, with no router call.
+out=$(scan_fixture 'mkdir -p app/api/x && printf "export const GET = async () => Response.json({});\n" > app/api/x/route.ts && git add -A')
+grep -q '^HAS_API_ROUTES: true' <<< "$out" || RF_BAD="$RF_BAD [a Next.js route.ts handler is not a route]"
+# A new method on an existing class. The class is committed first, so the only
+# added symbol is the indented def — a fixture whose added lines include
+# `class` passes the old column-0 pattern and proves nothing.
+out=$(scan_fixture 'printf "class Billing:\n    pass\n" > billing.py && git add -A && git commit -qm base \
+  && printf "    def refund(self, amount):\n        return amount\n" >> billing.py && git add -A')
+grep -q '^HAS_NEW_SYMBOLS: true' <<< "$out" || RF_BAD="$RF_BAD [an indented def is not a new symbol]"
+# An access-modified method with a generic return type: written with backslash
+# escapes, the type-name bracket expression closed early and never matched.
+out=$(scan_fixture 'printf "class Svc {\n" > Svc.cs && git add -A && git commit -qm base \
+  && printf "    public async Task<int> Run(int a) {\n    }\n" >> Svc.cs && git add -A')
+grep -q '^HAS_NEW_SYMBOLS: true' <<< "$out" || RF_BAD="$RF_BAD [a new C# method is not a new symbol]"
+for decl in 'func Charge(amount int) error {' 'pub async fn charge(amount: u64) {' 'export const charge = async (amount) => {'; do
+  out=$(scan_fixture "printf '%s\n' '$decl' > src.txt && git add -A")
+  grep -q '^HAS_NEW_SYMBOLS: true' <<< "$out" || RF_BAD="$RF_BAD [not a new symbol: $decl]"
+done
+# And the negative: prose is not a symbol.
+out=$(scan_fixture 'printf "# Notes\nsome words\n" > NOTES.md && git add -A')
+grep -q '^HAS_NEW_SYMBOLS: false' <<< "$out" || RF_BAD="$RF_BAD [a docs-only diff reads as new symbols]"
+[[ -z "$RF_BAD" ]] \
+  && log_ok "routes (inline, Next.js, large diffs) and new symbols (methods, C#/Java, Go, Rust, arrows) are detected" \
+  || log_fail "routing signals wrong:$RF_BAD"
+
 # ─── 6. Hook verdict parsing (fake AI shim) ───────────────────────────────────
 # The hooks grep the AI's output for COMMIT_VERDICT/PUSH_VERDICT and branch on
 # exit codes with a deliberate asymmetry: pre-commit WARN allows the commit
