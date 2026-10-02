@@ -80,15 +80,19 @@ the index, which on a partly staged file is not what is on disk, and a push
 carries commits, not the working tree:
 
 ```bash
-git show ":<file>" | head -n <line> | tail -n 1                   # commit mode — the staged text
-git show "${LOCAL_SHA:-HEAD}:<file>" | head -n <line> | tail -n 1  # push mode — the pushed commit
+git show ":<file>" | head -n <line> | tail -n +<line>                   # commit mode — the staged text
+git show "${LOCAL_SHA:-HEAD}:<file>" | head -n <line> | tail -n +<line>  # push mode — the pushed commit
 ```
+
+`tail -n +<line>`, not `tail -n 1`: when the file is shorter than the line a
+finding names, the first prints nothing and the second prints the file's last
+line — someone else's comment, read as this finding's.
 
 In interactive mode read the working tree. In commit and push mode, never fall
 back to the file on disk when that read fails: a `manta-ignore` comment that
 exists only in the working tree — never staged, never reviewed — must not
-excuse a finding in the code that is. A line you cannot read that way is no
-suppression; keep the finding.
+excuse a finding in the code that is. A line you cannot read that way (empty
+output included) is no suppression; keep the finding.
 
 Report every inline suppression that fired, in every mode, as `INLINE SUPPRESSIONS: <n> — <file:line> "<reason>"; …` on its own line directly after the `SUPPRESSED:` line.
 
