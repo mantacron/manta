@@ -22,12 +22,13 @@ This command prevents wasted implementation effort by running a structured multi
 
 ## Step 0 — Parse Input & Validate
 
-Extract the feature slug from `$ARGUMENTS`. The user may pass just the slug (`oauth2`) or the full path (`rpi/oauth2/REQUEST.md`) — normalize to the slug.
+Extract the feature slug from `$ARGUMENTS`. The user may pass just the slug (`oauth2`) or the full path (`rpi/oauth2/REQUEST.md`), followed by notes — normalize to the slug, the first word.
 
 ```bash
-FEATURE_SLUG="$ARGUMENTS"
+# The slug is the first word; anything after it is a note for you, not part of the path.
+FEATURE_SLUG=$(echo "$ARGUMENTS" | sed 's/^[[:space:]]*//;s/[[:space:]].*//')
 # Strip rpi/ prefix and /REQUEST.md suffix if present
-FEATURE_SLUG=$(echo "$FEATURE_SLUG" | sed 's|^rpi/||;s|/REQUEST\.md$||')
+FEATURE_SLUG=$(echo "$FEATURE_SLUG" | sed 's|^rpi/||;s|/REQUEST\.md$||;s|/$||')
 
 echo "Feature slug: $FEATURE_SLUG"
 
@@ -64,7 +65,16 @@ MANTA_DIR=$(pwd)
 
 Invoke with the REQUEST.md content. The agent extracts structured requirements, flags clarifying questions, and estimates complexity.
 
-**If the requirement-parser returns CLARIFYING QUESTIONS that are blockers**, stop and present them to the user before continuing. Wait for answers before proceeding.
+**If the requirement-parser returns CLARIFYING QUESTIONS that are blockers**, stop and present them before continuing — a GO/NO-GO built on guessed answers is the waste this step exists to prevent.
+
+- A person answers here: write their answers into `rpi/{slug}/REQUEST.md` under
+  `## Answers` (append; never rewrite their request), then continue — the
+  record survives the conversation, and the later steps read it.
+- Nobody can answer (`claude -p`, CI): stop after listing the questions, write
+  nothing else, and end with: `Blocked on [N] question(s). Add the answers to
+  rpi/{slug}/REQUEST.md under "## Answers" and re-run /rpi-research {slug}.`
+- Answers already in REQUEST.md (`## Answers`, or decisions written into the
+  request) are answers: do not ask again what they settle.
 
 ---
 

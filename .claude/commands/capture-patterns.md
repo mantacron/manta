@@ -13,12 +13,22 @@ Your output is `PATTERNS.md` — the machine-readable pattern registry that `cod
 ```bash
 cat manta.patterns.json 2>/dev/null
 cat PATTERNS.md 2>/dev/null | head -20
+echo "MANTA_ASSUME=${MANTA_ASSUME:-}"
 ```
 
-If either file exists with non-null/non-`[none defined]` content, ask the user:
-> "Pattern files already have content. Do you want to [overwrite] with a fresh scan, [update] only the empty sections, or [cancel]?"
+If neither file has content (missing, or nothing but `null` / `[none defined]`),
+there is nothing to lose: scan, then write both in Step 15 without asking.
 
-Proceed based on their answer.
+If either has content, the team's patterns are already in them, and how to
+treat them is the one question this command asks — **after** the scan, in
+Step 15, so the person sees what was detected before deciding, and a run with
+nobody to answer still prints the whole scan:
+
+- `--update` (or `--yes`, or `MANTA_ASSUME=yes`): fill only the empty sections
+  and fields; every filled value stays as it is. This is the default answer.
+- `--overwrite`: replace both files with the fresh scan.
+- `--no` (or `MANTA_ASSUME=no`): scan and show the summary; write nothing.
+- None of these: ask in Step 15, last.
 
 ## Step 2: Detect the language and framework stack
 
@@ -280,7 +290,33 @@ Rules for generation:
 - Include real examples from the codebase in comments
 - For `manta.patterns.json`: set fields to `null` for anything undetected; use strings for detected values
 
-## Step 15: Confirm before writing
+### `forbidden_patterns` — the one list that blocks commits
+
+Every match of a `forbidden_patterns` entry is a **CRITICAL** finding, and a
+CRITICAL blocks the commit and the push. An entry here is a decision to stop the
+team's work over it, so a scan does not get to make that decision on its own:
+
+- Write an entry only when the project **already states the rule** — in
+  `spec/SPEC.md`, `CONSTITUTION.md`, a lint rule set to `error`, or a code
+  comment that says *never* / *must not* — and end the entry with where it says
+  so: `"Never log the card number (SPEC §7)"`. Or when it is a security
+  invariant whose violation is directly exploitable and that the code upholds
+  everywhere: a secret in source, a file path built from client input, HTML
+  built from untrusted data with `innerHTML`.
+- Each entry must be decidable from the changed line itself. "Blocking I/O in
+  an async route" is not: deciding it means tracing what a called helper does,
+  so one reviewer passes it and another, reading deeper, calls the same lines
+  CRITICAL. That exact entry, written by this command, made a deep `/review`
+  BLOCK on a one-line `unlink` the commit gate had passed three times.
+- Style, performance and convention never go here — import order, logging
+  format, naming, blocking calls, f-strings in log calls. They belong in their
+  own sections, where a violation is a WARNING.
+- Everything else you would have listed goes in PATTERNS.md under
+  `Candidates for forbidden patterns` — with the evidence — for the team to
+  promote by hand if they agree. Two or three real entries is normal; ten is a
+  sign the list has become a style guide.
+
+## Step 15: Summary, then write
 
 Show a summary of what was detected:
 
@@ -298,7 +334,12 @@ Show a summary of what was detected:
 ### Sections left as [none defined] / null:
 - [what couldn't be determined]
 
-Writing PATTERNS.md and manta.patterns.json... Done.
+### forbidden_patterns ([N] — each one blocks commits):
+- [entry] — [where the project states it]
+### Candidates left for the team (not enforced):
+- [entry] — [evidence]
+
+[Once the files are written:] Writing PATTERNS.md and manta.patterns.json... Done.
 
 Next steps:
 1. Review PATTERNS.md and fill in any [none defined] sections
@@ -307,7 +348,18 @@ Next steps:
 4. Commit both files — patterns will be enforced on every pre-commit from now on
 ```
 
-Write both files directly — do not ask for additional confirmation.
+When the files were empty, or `--update` / `--overwrite` / `--yes` already
+said how, write both files directly — do not ask for additional confirmation.
+
+When they had content and nothing said how, ask now, after the summary:
+
+```
+PATTERNS.md and manta.patterns.json already have content.
+[update] fill only the empty sections (default) · [overwrite] replace both with this scan · [cancel]
+Nothing is written without an answer — re-run with --update (or --overwrite) to write.
+```
+
+With `--no` or a cancel, write nothing and say so.
 
 ## Important Rules
 

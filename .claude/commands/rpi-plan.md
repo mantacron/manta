@@ -29,7 +29,8 @@ rpi/{slug}/plan/
 ## Step 0 — Parse Input & Validate
 
 ```bash
-FEATURE_SLUG=$(echo "$ARGUMENTS" | sed 's|^rpi/||;s|/.*||')
+# The slug is the first word; anything after it is a note for you, not part of the path.
+FEATURE_SLUG=$(echo "$ARGUMENTS" | sed 's/^[[:space:]]*//;s/[[:space:]].*//' | sed 's|^rpi/||;s|/.*||')
 
 echo "Planning feature: $FEATURE_SLUG"
 
@@ -44,7 +45,7 @@ VERDICT=$(grep -i "^\*\*Decision:\*\*\|^Decision:" "rpi/$FEATURE_SLUG/research/R
 echo "Research verdict: $VERDICT"
 ```
 
-If the verdict is NO-GO, warn the user and ask for confirmation before continuing. If DEFER, stop and explain.
+If the verdict is NO-GO, warn the user and ask for confirmation before continuing — unless `--yes` (or `MANTA_ASSUME=yes`) already answered it. With nobody to answer, stop: `Research said NO-GO; nothing was written. Re-run with --yes to plan it anyway.` If DEFER, stop and explain.
 
 ---
 

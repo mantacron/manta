@@ -19,6 +19,21 @@ Executes the implementation plan phase-by-phase with mandatory validation gates.
 **Flags:**
 - `--phase N` — start from a specific phase (useful for resuming after a partial run)
 - `--validate-only` — run the validation gate for the current phase without implementing
+- `--commit` — commit each phase once its gate passes (see Step 2b). Without it, nothing is committed
+
+**What it changes:** code and tests in the working tree, and
+`rpi/{slug}/implement/IMPLEMENT.md`. It commits only with `--commit`. It never
+pushes. There are no questions to answer: a gate that fails twice stops the run
+and records why, so `claude -p "/rpi-implement {slug}"` behaves as an
+interactive run does.
+
+**Who does the work:** the agents named in each step — dispatch them with the
+Agent tool and pass what the step says. Do not implement a phase, review the
+code or write the record yourself. If an agent cannot be dispatched, say so in
+the output and in IMPLEMENT.md ("Phase 2 implemented by the orchestrator:
+senior-software-engineer could not be dispatched — [reason]") — never silently.
+On 2026-10-02 a run wrote every phase and the record itself, and said so only
+at the end.
 
 ---
 
@@ -26,7 +41,7 @@ Executes the implementation plan phase-by-phase with mandatory validation gates.
 
 ```bash
 # Parse args
-FEATURE_SLUG=$(echo "$ARGUMENTS" | sed 's/ .*//' | sed 's|^rpi/||;s|/.*||')
+FEATURE_SLUG=$(echo "$ARGUMENTS" | sed 's/^[[:space:]]*//;s/[[:space:]].*//' | sed 's|^rpi/||;s|/.*||')
 START_PHASE=$(echo "$ARGUMENTS" | grep -oE '\-\-phase [0-9]+' | grep -oE '[0-9]+' || echo "1")
 VALIDATE_ONLY=$(echo "$ARGUMENTS" | grep -q '\-\-validate-only' && echo "true" || echo "false")
 
@@ -99,6 +114,26 @@ fi
 - `FAIL` — stop. Report the failure. Do not proceed until fixed. The `senior-software-engineer` agent should fix the failure before re-running the gate.
 - `SKIP` — tests not available; proceed with manual verification note
 
+### Step 2b — Commit the phase (only with `--commit`)
+
+After a phase's gate passes, and only with `--commit`:
+
+```bash
+git add [the files this phase changed — never `git add .`]
+git commit -m "feat({slug}): phase N — [phase name]"
+```
+
+The commit goes through the pre-commit review like any other — never bypass it
+(no `--no-verify`, no `SKIP_*` variables). A blocked commit stops the run:
+report the review's findings and leave the phase's changes staged for the
+person. Never commit changes to `spec/SPEC.md`, `CONSTITUTION.md` or
+`ARCHITECTURE.md` here, even when the plan calls for them: leave those edits in
+the working tree and list them for a person to review — the spec is the
+agreement the code is held to, and it is not this command's to sign.
+
+Without `--commit`, leave every change in the working tree; the completion
+output says how to review and commit it.
+
 ---
 
 ## Step 3 — Post-Implementation Review
@@ -145,9 +180,12 @@ Code quality: PASS | {N} warnings
 Files changed: {count}
 Implementation record: rpi/{slug}/implement/IMPLEMENT.md
 
+Committed: [N commits — one per phase (--commit) | nothing — changes are in the working tree]
+Spec/constitution edits for you to review: [files, or "none"]
+
 Next steps:
-  1. Review changes: git diff HEAD
-  2. Create a PR: gh pr create
+  1. Review changes: git diff HEAD   (with --commit: git log -p)
+  2. Commit them (each commit is reviewed by the gate), then push and open a PR
   3. Update docs if needed: /update-docs
 ```
 

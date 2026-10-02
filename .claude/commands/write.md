@@ -16,6 +16,7 @@ Use `scaffold` when you want to mirror the team's boilerplate. Use `write` when 
 /write "add a POST /payments endpoint with idempotency and audit logging"
 /write "add a background job that processes queued email sends with retry"
 /write "add a GET /admin/users endpoint with role-based access and pagination"
+/write --dry-run "add a POST /payments endpoint"   ← the plan only; nothing written
 ```
 
 ## Instructions
@@ -26,7 +27,10 @@ The argument is the feature description. If no argument was provided, ask:
 ```
 What feature would you like to write? Describe it in plain English — include any constraints
 (auth required, rate limits, data shape, spec reference) and I'll implement it completely.
+Usage: /write "description" [--dry-run]
 ```
+With nobody to answer (`claude -p`, CI) that is the whole output: there is no
+default feature to write.
 
 ### Step 2: Run code-writer agent
 
@@ -39,7 +43,26 @@ The agent will:
 4. Detect existing infrastructure (auth middleware, error hierarchy, logger, rate limiter)
 5. Check `spec/SPEC.md` alignment
 6. Present a complete implementation plan (all files, all layers, all enterprise defaults applied)
-7. Ask for confirmation, then write every file — no TODOs, no placeholder logic
+7. Write every file — no TODOs, no placeholder logic
+
+The agent runs as a sub-agent: it cannot stop and wait for an answer, so tell it
+so in the prompt. Running `/write "…"` is the request to write; with
+`--dry-run`, tell the agent to present the plan and write nothing. Also tell it
+the limits of what it may change on its own:
+
+- **The feature, and what it needs.** A module the enterprise defaults need
+  (a rate limiter, an audit logger) may be added — and is listed in the summary
+  under **Added beyond the request**.
+- **Nothing that changes existing behaviour outside the feature.** Making an
+  optional setting required (an env var the app now refuses to start without),
+  changing a default, rewriting the README, reshaping an existing response —
+  not done; each goes in the summary under **Proposed, not done**, with why.
+  On 2026-10-02 `/write` made an upload directory required at import time — the
+  app no longer started without it — and rewrote the README, unasked.
+- **What the spec rules out stays out.** A non-goal or accepted constraint in
+  `spec/SPEC.md` (auth handled by a gateway) is respected, and said.
+- **Never overwrite an existing file.** Edit existing files only to wire the
+  feature in, and list any file it would have replaced under **Left for you**.
 
 ### Step 3: Post-write
 
@@ -75,4 +98,5 @@ The code-writer applies these patterns unless the project already has them (in w
 - Not a spec replacement — if the feature isn't in `spec/SPEC.md`, the agent flags it as a deviation
 - Not a one-shot deploy button — run `/review` after writing
 - Not a magic wand — complex domain logic still needs your input on the business rules
-- Not overwriting existing files — if a file already exists, the agent will ask what to do
+- Not overwriting existing files — an existing file is edited only to wire the feature in; one it would have replaced is listed for you
+- Not a silent refactor — changes to existing behaviour outside the feature are proposed in the summary, not made

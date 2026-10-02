@@ -9,8 +9,17 @@ Invoke the `wiki-agent` to generate a product wiki at `docs/wiki/`.
 3. Attempts screenshot capture (needs app running + Playwright/Puppeteer/Chromium)
 4. Reads each page's source to understand its features
 5. Compares to `spec/SPEC.md` if one exists
-6. Asks clarifying questions about anything that couldn't be determined from code
+6. Lists what it could not determine from code, as assumptions to confirm
 7. Writes structured markdown to `docs/wiki/`
+
+The agent runs as a sub-agent and cannot stop mid-run for an answer, so tell it
+so in the prompt: instead of asking, it writes each open question as an
+assumption under **Assumptions to confirm** in `docs/wiki/index.md`, uses its
+best reading meanwhile, and returns the list. Show that list at the end. When
+the person answers here, record the answers in
+`.claude/agent-memory/wiki-agent/MEMORY.md` (clarifications) so the next run
+does not ask again. A run with nobody to answer (`claude -p`, CI) writes the
+same wiki and the same list.
 
 ## Subdirectory Mode
 

@@ -16,7 +16,21 @@ You are orchestrating the `ui-component-writer` to convert design inputs into pr
 /ui --dry-run "description"      ← preview for a specific description without writing
 /ui --update ComponentName       ← update an existing component to match a new design
 /ui --audit                      ← scan existing components for DRY violations and inconsistencies
+/ui --yes                        ← every design in ui-designs/, no questions
 ```
+
+### Answering without a person
+
+`/ui` can ask two questions: which design files to process, and — when a similar
+component exists — whether to extend it, replace it, or create a new one.
+
+- `--yes` (or `MANTA_ASSUME=yes` in the environment): process every design
+  found, and extend a similar component (option a — the existing props API kept,
+  new props added) rather than duplicate or replace it.
+- `--dry-run` (or `--no`, or `MANTA_ASSUME=no`): preview only, as below.
+- Neither: ask when you reach the question, and end it with `Nothing is written
+  without an answer — re-run with --yes to [process all / extend X].` A
+  `claude -p` or CI run stops there, having written nothing.
 
 ---
 
@@ -73,7 +87,10 @@ If design files are found, list them and ask which to process:
 > 1. [filename] — [size or last modified]
 > 2. ...
 >
-> Process all of them? [Y/n] — or enter numbers to select specific files."
+> Process all of them? [Y/n] — or enter numbers to select specific files.
+> Nothing is written without an answer — re-run with --yes to process all of them."
+
+Skip the question with `--yes`.
 
 ---
 
@@ -102,9 +119,10 @@ If a similar component is found:
 > (b) **Replace** — the existing one is wrong or too limited
 > (c) **Create new** — they're different enough to be separate
 >
-> Which? [a/b/c]"
+> Which? [a/b/c]
+> Nothing is written without an answer — re-run with --yes to extend `[ComponentName]`."
 
-Wait for answer. This prevents duplication.
+Wait for answer — or, with `--yes`, take (a). This prevents duplication.
 
 ---
 
@@ -256,3 +274,4 @@ Report:
 - **Never skip accessibility** — ARIA and keyboard nav are not optional
 - **Always check for existing components before generating** — DRY is enforced at orchestrator level
 - **`ui-designs/` is the convention** — suggest creating it if it doesn't exist
+- **Leave nothing running and nothing stray** — a dev server, browser or watcher this command started is stopped before it finishes, and output it wrote outside the component's files (coverage data such as `.coverage`, screenshots, temp files) is removed or named in the summary. If a process cannot be stopped (stopping one needs the person's approval), say so with its PID and the command that stops it
