@@ -162,6 +162,48 @@ else
   log_fail "core.hooksPath is '$HOOKS_PATH', expected '.githooks'"
 fi
 
+# ─── 4b. Updating an install ──────────────────────────────────────────────────
+# `--force` was the only documented update, and it replaced the developer's
+# patterns, suppressions, settings and CLAUDE.md with templates. --update
+# refreshes Manta's files and keeps theirs — twice in a row, byte for byte.
+log_step "Installer --update keeps the developer's files"
+
+UPD_TMP=$(mktemp -d "$HOOK_TMP/update.XXXXXX")
+(
+  cd "$UPD_TMP" && git init -q . \
+    && printf '# Our project\nWe keep suppressions in .mantaignore.\n' > CLAUDE.md \
+    && printf '# Our own agent instructions\n' > AGENTS.md \
+    && bash "$ROOT/scripts/install.sh" \
+    && printf 'src/legacy/**  DRY  # generated\n' >> .mantaignore \
+    && printf '# Team patterns\n' > PATTERNS.md \
+    && printf '{"naming": {"source_files": "kebab-case"}}\n' > manta.patterns.json \
+    && echo "tampered" >> .claude/agents/code-quality.md \
+    && python3 -c 'import json;p=".claude/settings.json";d=json.load(open(p));d["permissions"]["allow"].append("Bash(our-tool*)");json.dump(d,open(p,"w"),indent=2)' \
+    && for f in .mantaignore PATTERNS.md manta.patterns.json CLAUDE.md AGENTS.md; do cp "$f" "$f.mine"; done \
+    && bash "$ROOT/scripts/install.sh" --update && bash "$ROOT/scripts/install.sh" --update
+) > "$UPD_TMP.log" 2>&1
+UPD_EXIT=$?
+UPD_BAD=""
+[[ $UPD_EXIT -eq 0 ]] || UPD_BAD="$UPD_BAD [install/update exited $UPD_EXIT]"
+for f in .mantaignore PATTERNS.md manta.patterns.json CLAUDE.md AGENTS.md; do
+  cmp -s "$UPD_TMP/$f" "$UPD_TMP/$f.mine" || UPD_BAD="$UPD_BAD [$f changed]"
+done
+cmp -s "$UPD_TMP/.claude/agents/code-quality.md" "$ROOT/.claude/agents/code-quality.md" \
+  || UPD_BAD="$UPD_BAD [a Manta agent was not refreshed]"
+cmp -s "$UPD_TMP/.claude/settings.json" "$ROOT/.claude/settings.json" \
+  || UPD_BAD="$UPD_BAD [settings.json was not refreshed]"
+grep -q 'our-tool' "$UPD_TMP/.claude/settings.json.pre-update" 2>/dev/null \
+  || UPD_BAD="$UPD_BAD [the developer's settings were not kept in .pre-update]"
+git -C "$UPD_TMP" check-ignore -q .claude/settings.json.pre-update \
+  || UPD_BAD="$UPD_BAD [settings.json.pre-update is not git-ignored]"
+# The appended reference block: present although CLAUDE.md said ".mantaignore"
+# (any lowercase "manta" used to count as present), and present once.
+blocks=$(grep -c '^## Manta — AI Review Pipeline$' "$UPD_TMP/CLAUDE.md" 2>/dev/null || true)
+[[ "$blocks" == "1" ]] || UPD_BAD="$UPD_BAD [CLAUDE.md carries the reference block ${blocks:-0} times]"
+[[ -z "$UPD_BAD" ]] \
+  && log_ok "--update twice: patterns, suppressions, CLAUDE.md and an own AGENTS.md kept; Manta's files and settings refreshed" \
+  || { log_fail "install.sh --update:$UPD_BAD"; tail -5 "$UPD_TMP.log" | sed 's/^/      /'; }
+
 # ─── 5. Shallow-scan detection ────────────────────────────────────────────────
 # Regression test for scripts/shallow-scan.sh's diff-filtering pipeline and
 # pattern coverage against seeded vulnerable fixtures. This exact script once

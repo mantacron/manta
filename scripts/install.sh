@@ -3,13 +3,16 @@
 #
 # Installs the Manta Edition into any project.
 # 20 agents · 21 commands · 2 git hooks
-# Safe to re-run — existing files are preserved unless --force is passed.
+# Safe to re-run — existing files are preserved unless --update or --force is passed.
 #
 # Usage:
 #   # From a local clone:
 #   bash /path/to/manta/scripts/install.sh
 #
-#   # Force overwrite existing files:
+#   # Update an existing install — Manta's files refreshed, yours kept:
+#   bash /path/to/manta/scripts/install.sh --update
+#
+#   # Force overwrite everything, your patterns and suppressions included:
 #   bash install.sh --force
 #
 #   # Install from a specific branch or fork:
@@ -22,13 +25,25 @@ REPO="${REPO:-mantacron/manta}"
 BRANCH="${BRANCH:-main}"
 BASE_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}"
 FORCE=false
+UPDATE=false
 # Every path install_file wrote this run — the only files the gate may later
 # skip as "Manta's own, unchanged" (see the end of this script).
 INSTALLER_WROTE=()
 
 for arg in "$@"; do
   [[ "$arg" == "--force" ]] && FORCE=true
+  # --update is --force for every file Manta owns and a no-op for every file the
+  # developer owns. `--force` was the only documented update, and it replaced
+  # their patterns, suppressions and settings with templates and their CLAUDE.md
+  # with Manta's own — the README promised those were "never touched".
+  [[ "$arg" == "--update" ]] && { FORCE=true; UPDATE=true; }
 done
+
+# True when $1 exists and belongs to the developer for this run: always without
+# --force, and still under --update. Only a bare --force replaces it.
+keep_customer_file() {
+  [[ -e "$1" ]] && [[ "$FORCE" != "true" || "$UPDATE" == "true" ]]
+}
 
 # ─── Colors ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -53,7 +68,11 @@ echo -e "${CYAN}${BOLD}║  20 agents · 21 commands · automated code review   
 echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════╝${RESET}"
 echo ""
 
-[[ "$FORCE" == "true" ]] && echo -e "${YELLOW}${BOLD}--force: existing files will be overwritten${RESET}\n"
+if [[ "$UPDATE" == "true" ]]; then
+  echo -e "${YELLOW}${BOLD}--update: Manta's files are refreshed; your patterns, suppressions and CLAUDE.md are kept${RESET}\n"
+elif [[ "$FORCE" == "true" ]]; then
+  echo -e "${YELLOW}${BOLD}--force: existing files will be overwritten — your patterns and suppressions included (use --update to keep them)${RESET}\n"
+fi
 
 # ─── Detect run mode ──────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || echo "")"
@@ -87,10 +106,11 @@ install_file() {
   if [[ -n "$LOCAL_ROOT" ]]; then
     cp "$LOCAL_ROOT/$src_rel" "$dst"
   else
+    # Bounded: a stalled connection used to hang the installer indefinitely.
     if command -v curl &>/dev/null; then
-      curl -fsSL "$BASE_URL/$src_rel" -o "$dst"
+      curl -fsSL --connect-timeout 15 --max-time 120 "$BASE_URL/$src_rel" -o "$dst"
     else
-      wget -q "$BASE_URL/$src_rel" -O "$dst"
+      wget -q --timeout=30 --tries=2 "$BASE_URL/$src_rel" -O "$dst"
     fi
   fi
 
@@ -105,12 +125,16 @@ install_claude_md() {
     return
   fi
 
-  if [[ "$FORCE" == "true" ]]; then
+  if [[ "$FORCE" == "true" && "$UPDATE" != "true" ]]; then
     install_file "CLAUDE.md" "CLAUDE.md" "CLAUDE.md (overwritten)"
     return
   fi
 
-  if grep -q "manta" CLAUDE.md 2>/dev/null; then
+  # Present means the block's own heading, or Manta's full CLAUDE.md from an
+  # earlier install. Any lowercase "manta" used to count — so a CLAUDE.md that
+  # merely mentioned .mantaignore, or a project named mantaray, never got the
+  # reference block at all.
+  if grep -qE '^## Manta — AI Review Pipeline$|^# Manta$' CLAUDE.md 2>/dev/null; then
     log_skip "CLAUDE.md (Manta reference already present)"
     return
   fi
@@ -123,8 +147,8 @@ install_claude_md() {
 
 This project uses [Manta](https://github.com/mantacron/manta): a 20-agent AI pipeline for automated code review.
 
-**On every `git commit`:** 4 agents review staged changes. CRITICAL findings block the commit.
-**On every `git push`:** 4 agents run a full branch review. CRITICAL and WARNING both block.
+**On every `git commit`:** 3 agents review staged changes (db-migration-guardian only when a migration is staged). CRITICAL findings block the commit.
+**On every `git push`:** 3–4 agents review the branch diff. CRITICAL and WARNING both block.
 **Commands available:** `/init`, `/review`, `/security-scan`,
 `/blueprint`, `/scaffold`, `/ui`, `/fix`, and more.
 
@@ -211,7 +235,18 @@ done
 # ─── Step 4: Install settings.json ────────────────────────────────────────────
 log_step "Installing .claude/settings.json"
 
-if [[ -f ".claude/settings.json" && "$FORCE" != "true" ]]; then
+if [[ -f ".claude/settings.json" && "$UPDATE" == "true" ]]; then
+  # Manta's permission rules and hooks change between versions (the commit
+  # guard among them), so an update takes the new file — but never silently
+  # discards a rule the developer added.
+  if [[ -n "$LOCAL_ROOT" ]] && cmp -s "$LOCAL_ROOT/.claude/settings.json" ".claude/settings.json"; then
+    log_skip ".claude/settings.json (already current)"
+  else
+    cp ".claude/settings.json" ".claude/settings.json.pre-update"
+    install_file ".claude/settings.json" ".claude/settings.json"
+    log_warn "Previous settings saved to .claude/settings.json.pre-update — re-apply any rules you added"
+  fi
+elif [[ -f ".claude/settings.json" && "$FORCE" != "true" ]]; then
   log_skip ".claude/settings.json"
 else
   install_file ".claude/settings.json" ".claude/settings.json"
@@ -274,22 +309,33 @@ install_claude_md
 # ─── Step 8a: Install AI tool instruction files ───────────────────────────────
 log_step "Installing AI tool instruction files (AGENTS.md, GEMINI.md, .github/copilot-instructions.md)"
 
-install_file "AGENTS.md" "AGENTS.md"
-install_file "GEMINI.md" "GEMINI.md"
+# Under --update only Manta's own copies are refreshed. AGENTS.md in particular
+# is a cross-tool convention a project may well have written for itself; the
+# first install skipped it, and an update must not then replace it. Manta's
+# copies are recognised by their first line.
+install_instruction_file() {  # $1 = path, $2 = Manta's first line (ERE)
+  if [[ "$UPDATE" == "true" && -e "$1" ]] && ! head -n 1 "$1" 2>/dev/null | grep -qE "$2"; then
+    log_skip "$1 (your own, not Manta's — kept)"
+  else
+    install_file "$1" "$1"
+  fi
+}
+install_instruction_file "AGENTS.md" '^# Manta — AI Review Pipeline$'
+install_instruction_file "GEMINI.md" '^# Manta — AI Review Pipeline$'
 
 mkdir -p .github
-install_file ".github/copilot-instructions.md" ".github/copilot-instructions.md"
+install_instruction_file ".github/copilot-instructions.md" '^# Copilot Instructions — Manta$'
 
 # ─── Step 8b: Install pattern config templates ───────────────────────────────
 log_step "Installing pattern configuration (PATTERNS.md + manta.patterns.json)"
 
-if [[ -f "PATTERNS.md" && "$FORCE" != "true" ]]; then
+if keep_customer_file "PATTERNS.md"; then
   log_skip "PATTERNS.md (your patterns are preserved)"
 else
   install_file "PATTERNS.md" "PATTERNS.md"
 fi
 
-if [[ -f "manta.patterns.json" && "$FORCE" != "true" ]]; then
+if keep_customer_file "manta.patterns.json"; then
   log_skip "manta.patterns.json (your patterns are preserved)"
 else
   install_file "manta.patterns.json" "manta.patterns.json"
@@ -300,7 +346,7 @@ log_info "Run /capture-patterns to auto-populate from your codebase"
 # ─── Step 8c: Install .mantaignore template ───────────────────────────────────
 log_step "Installing .mantaignore"
 
-if [[ -f ".mantaignore" && "$FORCE" != "true" ]]; then
+if keep_customer_file ".mantaignore"; then
   log_skip ".mantaignore (your suppressions preserved)"
 else
   install_file ".mantaignore" ".mantaignore"
@@ -328,6 +374,9 @@ add_to_gitignore ".claude/init-state.json" "Claude Code init session state"
 add_to_gitignore "reports/*-commit-review.md" "Manta hook logs"
 add_to_gitignore "reports/*-push-review.md"   "Manta hook logs"
 add_to_gitignore ".manta-cache/"     "Manta local cache (project map, scan signals)"
+# A local backup, not project state — and an update closes by suggesting
+# `git add .claude`, which would otherwise commit it.
+add_to_gitignore ".claude/settings.json.pre-update" "Manta: your previous settings, kept by install.sh --update"
 
 # ─── Step 10: Configure git hooks path ────────────────────────────────────────
 log_step "Configuring git hooks path"
@@ -446,18 +495,29 @@ echo -e "  ${GREEN}${BOLD}✓ AGENTS.md${RESET}    — instruction file for Open
 echo -e "  ${GREEN}${BOLD}✓ GEMINI.md${RESET}    — instruction file for Google Gemini CLI"
 echo -e "  ${GREEN}${BOLD}✓ copilot-instructions.md${RESET} — instruction file for GitHub Copilot"
 echo ""
-echo -e "${BOLD}Next steps:${RESET}"
-echo ""
-echo -e "  1. Open Claude Code in this project:"
-echo -e "     ${CYAN}claude${RESET}"
-echo ""
-echo -e "  2. Run the setup wizard:"
-echo -e "     ${CYAN}/init${RESET}"
-echo ""
-echo -e "  3. Or — start with a security scan on your existing code:"
-echo -e "     ${CYAN}/security-scan${RESET}"
-echo -e "     ${CYAN}/blueprint${RESET}   ← visual map of your codebase"
-echo ""
-echo -e "${BOLD}To update later:${RESET}"
-echo -e "  ${CYAN}bash scripts/install.sh --force${RESET}"
+if [[ "$UPDATE" == "true" ]]; then
+  # An update is a change to review and commit, not a first run of /init.
+  echo -e "${BOLD}Updated.${RESET} Review the change and commit it:"
+  echo -e "  ${CYAN}git status && git diff --stat${RESET}"
+  echo -e "  ${CYAN}git add .claude .githooks scripts CLAUDE.md AGENTS.md GEMINI.md .github .gitignore && git commit -m \"chore: update Manta\"${RESET}"
+  echo ""
+else
+  echo -e "${BOLD}Next steps:${RESET}"
+  echo ""
+  echo -e "  1. Open Claude Code in this project:"
+  echo -e "     ${CYAN}claude${RESET}"
+  echo ""
+  echo -e "  2. Run the setup wizard:"
+  echo -e "     ${CYAN}/init${RESET}"
+  echo ""
+  echo -e "  3. Or — start with a security scan on your existing code:"
+  echo -e "     ${CYAN}/security-scan${RESET}"
+  echo -e "     ${CYAN}/blueprint${RESET}   ← visual map of your codebase"
+  echo ""
+fi
+# The installer is not copied into the project, so "bash scripts/install.sh"
+# named a script the developer did not have.
+echo -e "${BOLD}To update later${RESET} (run the installer from a fresh clone of Manta):"
+echo -e "  ${CYAN}gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh --update && rm -rf /tmp/manta${RESET}"
+echo -e "  ${CYAN}--update${RESET} refreshes Manta's files and keeps your patterns, suppressions and CLAUDE.md."
 echo ""
