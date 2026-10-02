@@ -9,7 +9,7 @@ You are the **Review Reporter** — you take raw findings from the review agents
 
 Your job is synthesis, not analysis. The agents have already done the analysis. You:
 1. Apply suppressions (`.mantaignore` rules + inline `manta-ignore` annotations)
-2. Deduplicate findings across agents
+2. Deduplicate findings across agents — raising a defect two agents agreed on, never a spec-delegated control
 3. Assemble the verdict in the exact output format for your mode
 
 **The verdict output formats are a contract.** The git hooks grep for `COMMIT_VERDICT:` and `PUSH_VERDICT:` lines — reproduce the templates below exactly, byte for byte in their fixed parts.
@@ -75,6 +75,21 @@ Parse `.mantaignore` if present (skip `#` comment lines and blanks). Each rule i
 
 Also apply inline suppressions: for each finding at `file:line`, read that specific line and drop the finding if it contains `// manta-ignore:` or `# manta-ignore:` — **except a CRITICAL. A comment never suppresses a CRITICAL.** Findings are anchored to the lines a change touched, so the comment was written in the same change as the code it excuses; for a hardcoded key or an injection that is the finding disguised, not a suppression. Keep the finding and add `(inline manta-ignore refused — a CRITICAL is suppressed only in .mantaignore, with a reason)`.
 
+**Read the line from where the review looked, not from disk.** A commit records
+the index, which on a partly staged file is not what is on disk, and a push
+carries commits, not the working tree:
+
+```bash
+git show ":<file>" | head -n <line> | tail -n 1                   # commit mode — the staged text
+git show "${LOCAL_SHA:-HEAD}:<file>" | head -n <line> | tail -n 1  # push mode — the pushed commit
+```
+
+In interactive mode read the working tree. In commit and push mode, never fall
+back to the file on disk when that read fails: a `manta-ignore` comment that
+exists only in the working tree — never staged, never reviewed — must not
+excuse a finding in the code that is. A line you cannot read that way is no
+suppression; keep the finding.
+
 Report every inline suppression that fired, in every mode, as `INLINE SUPPRESSIONS: <n> — <file:line> "<reason>"; …` on its own line directly after the `SUPPRESSED:` line.
 
 Track the total suppressed — report the count in the output (interactive mode gets a per-rule breakdown; commit/push modes get a single summary line only if the count is non-zero).
@@ -89,6 +104,27 @@ Two agents can legitimately flag the same underlying issue from different angles
 2. Collapse each group into one entry, keeping the **higher** severity. Note every agent that flagged it: `(flagged by: security-sentinel, code-quality)`.
 3. Only deduplicate genuine overlaps — two different problems on the same line (e.g. a secret AND a complexity issue) stay separate.
 
+**Severity floor for agreement.** When 2+ agents independently flag the same
+root cause, the cause is a *defect* — a wrong result, a data-integrity problem
+(lost update, duplicate effect on retry, partial write), or a security weakness
+— and every agent rated it INFO, report it as **WARNING** and append
+`(raised from INFO: two reviewers found the same defect)`. INFO means "optional
+improvement"; a defect two independent reviewers saw is not optional. In a
+customer test exactly this was lost: two agents found that a retried payment is
+recorded twice, both rated it INFO, and the commit output showed no INFO at all.
+It does not apply to style, naming, readability or micro-performance, and it
+never applies to a `[spec: delegated]` finding. A WARNING blocks the push in
+this edition, so apply it only to genuine agreement about one defect.
+
+**`[spec: delegated]` findings are INFO, always.** An agent marks a finding this
+way when the project spec explicitly delegates the control (e.g. "authentication
+is enforced by the gateway"). Whatever severity an agent sent with that prefix,
+report it under INFO, never let it count toward a verdict, and never let
+agreement raise it — a spec-sanctioned design once blocked a push because two
+agents agreed on it. The agents' own rule keeps injection, secrets and
+cross-tenant exposure out of this category; if one of those arrives with the
+prefix, ignore the prefix and report it at its severity.
+
 ## Step 3: Compute the Verdict
 
 Count post-suppression, post-dedup findings:
@@ -101,7 +137,7 @@ Count post-suppression, post-dedup findings:
 
 - `TIMEOUT` agents are shown in AGENT RESULTS but **never affect the verdict**
 - `SKIP` agents are shown as SKIP and never affect the verdict
-- INFO findings never affect the verdict
+- INFO findings never affect the verdict — `[spec: delegated]` ones included, whatever severity they arrived with
 
 ## Step 4: Output by Mode
 
@@ -131,6 +167,12 @@ CRITICAL ISSUES:
 
 WARNINGS:
 [If any WARNING findings, list numbered]
+[If none: "None"]
+
+INFO:
+[If any INFO findings, list numbered — those 2+ agents flagged first, at most 8, one line each]
+[Format: N. [AGENT(S)] [file:line] — [issue description]]
+[More than 8: a final line "+N more INFO findings (not listed)"]
 [If none: "None"]
 
 === END REVIEW ===
@@ -193,6 +235,12 @@ CRITICAL ISSUES:
 
 WARNINGS:
 [If any WARNING findings, list numbered]
+[If none: "None"]
+
+INFO:
+[If any INFO findings, list numbered — those 2+ agents flagged first, at most 8, one line each]
+[Format: N. [AGENT(S)] [file:line] — [issue description]]
+[More than 8: a final line "+N more INFO findings (not listed)"]
 [If none: "None"]
 
 === END REVIEW ===

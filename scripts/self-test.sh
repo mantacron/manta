@@ -688,7 +688,23 @@ grep -q 'perf-analyzer' <<< "$_commit_block" \
   && { log_fail "review-reporter's commit template names perf-analyzer — it will invent a status for an agent that never ran"; _POLICY_OK=0; }
 grep -q 'Never write a status for' "$ROOT/.claude/agents/review-reporter.md" \
   || { log_fail "review-reporter lost the rule forbidding statuses for agents that never ran"; _POLICY_OK=0; }
-[[ $_POLICY_OK -eq 1 ]] && log_ok "model policy, review scope, and the 3-agent roster all hold"
+# What the reporter must surface and what it must never count. A defect two
+# agents rated INFO was lost because commit output printed no INFO at all; a
+# spec-delegated control blocked a push when two agents agreed on it; and a
+# manta-ignore comment that existed only on disk excused staged code.
+_RR="$ROOT/.claude/agents/review-reporter.md"
+for kind in COMMIT PUSH; do
+  awk -v v="${kind}_VERDICT: PASS" '/^```$/{blk=""; next} {blk=blk $0 "\n"} index($0, v) == 1 {print blk; exit}' "$_RR" \
+    | grep -q '^INFO:$' \
+    || { log_fail "review-reporter's $kind template has no INFO section — an INFO-rated defect is never shown"; _POLICY_OK=0; }
+done
+grep -q '\[spec: delegated\]' "$_RR" \
+  || { log_fail "review-reporter does not handle [spec: delegated] — a delegated control can block a push"; _POLICY_OK=0; }
+grep -q 'raised from INFO: two reviewers found the same defect' "$_RR" \
+  || { log_fail "review-reporter lost the agreement floor — a defect two agents rated INFO stays invisible"; _POLICY_OK=0; }
+grep -q 'git show ":<file>"' "$_RR" \
+  || { log_fail "review-reporter reads inline suppressions from disk in commit mode — an unstaged comment can excuse staged code"; _POLICY_OK=0; }
+[[ $_POLICY_OK -eq 1 ]] && log_ok "model policy, review scope, the 3-agent roster and the reporter's rules all hold"
 
 # ─── The hook can read the verdict the reporter actually writes ──────────────
 #
