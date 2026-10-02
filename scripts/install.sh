@@ -516,8 +516,10 @@ else
   echo ""
 fi
 # The installer is not copied into the project, so "bash scripts/install.sh"
-# named a script the developer did not have.
+# named a script the developer did not have. The clone goes to a private
+# mktemp directory: a fixed /tmp/manta is a path another local user can create
+# first, and then the script that runs is theirs.
 echo -e "${BOLD}To update later${RESET} (run the installer from a fresh clone of Manta):"
-echo -e "  ${CYAN}gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh --update && rm -rf /tmp/manta${RESET}"
+echo -e "  ${CYAN}d=\$(mktemp -d) && gh repo clone mantacron/manta \"\$d\" && bash \"\$d/scripts/install.sh\" --update; rm -rf \"\$d\"${RESET}"
 echo -e "  ${CYAN}--update${RESET} refreshes Manta's files and keeps your patterns, suppressions and CLAUDE.md."
 echo ""

@@ -6,8 +6,11 @@ Automated code review on every commit. Security scanning, code quality, performa
 
 ## Setup (One-Time)
 
+From a clone of Manta, in your project root (later, `--update` refreshes
+Manta's files and keeps yours):
+
 ```bash
-bash scripts/install.sh
+bash /path/to/manta/scripts/install.sh
 ```
 
 Then open Claude Code:

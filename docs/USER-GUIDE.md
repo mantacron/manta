@@ -21,10 +21,15 @@ matches your situation. Everything after that is reference.
 ## Install
 
 ```bash
-bash scripts/install.sh
+bash /path/to/manta/scripts/install.sh    # from a clone of Manta, in your project root
 ```
 
 Installs the agents, commands, and git hooks. Safe to re-run.
+
+**Updating later:** run the installer from a fresh clone with `--update`. It
+refreshes Manta's own files and keeps your `PATTERNS.md`, `manta.patterns.json`,
+`.mantaignore` and `CLAUDE.md`; your previous `.claude/settings.json` is saved
+as `.claude/settings.json.pre-update`. `--force` replaces all of those too.
 
 Already have a project and only want the commit/push gates?
 

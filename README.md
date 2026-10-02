@@ -404,40 +404,41 @@ lever, because it keeps full rigour available without paying for it every time.
 gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh && rm -rf /tmp/manta
 ```
 
-**Force overwrite existing files:**
+**Start over — overwrite everything, your patterns and suppressions included:**
 ```bash
-bash scripts/install.sh --force
+d=$(mktemp -d) && gh repo clone mantacron/manta "$d" && bash "$d/scripts/install.sh" --force; rm -rf "$d"
 ```
 
 ---
 
 ## Updating to the Latest Version
 
-When fixes, new agents, or new commands are pushed to Manta, run the installer again from inside your project root:
+When fixes, new agents, or new commands are pushed to Manta, run the installer again from inside your project root with `--update`:
 
 ```bash
-# Pull and apply the latest Manta agents, commands, and hooks:
-gh repo clone mantacron/manta /tmp/manta && bash /tmp/manta/scripts/install.sh --force && rm -rf /tmp/manta
+# Pull and apply the latest Manta agents, commands, and hooks — keep your own files:
+d=$(mktemp -d) && gh repo clone mantacron/manta "$d" && bash "$d/scripts/install.sh" --update; rm -rf "$d"
 ```
 
-The `--force` flag overwrites all Manta boilerplate files (`agents/`, `commands/`, `.githooks/`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`) with the latest versions. Your project files (`spec/SPEC.md`, `ARCHITECTURE.md`, `RISKS.md`, `CONSTITUTION.md`, `PATTERNS.md`, `.env`, `.gitignore`, `README.md`, `CHANGELOG.md`) are **never touched** — only Manta's own files are updated.
+`--update` refreshes Manta's own files and keeps yours. Use it rather than `--force`, which also replaces your patterns, suppressions and settings with the templates.
 
 **What gets updated:**
 - All agent `.md` files in `.claude/agents/`
 - All command `.md` files in `.claude/commands/`
 - Git hooks in `.githooks/`
-- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md`
 - Helper scripts in `scripts/`
+- `AGENTS.md`, `GEMINI.md` and `.github/copilot-instructions.md` — Manta's copies only; one you wrote yourself is kept
+- `.claude/settings.json` — your previous copy is saved as `.claude/settings.json.pre-update` (git-ignored); re-apply any rule you added
 
-**What is never overwritten:**
-- Your spec, architecture, risks, and constitution files
-- Your `.env` and `.gitignore`
-- Your `README.md`, `CHANGELOG.md`, and `manta.patterns.json`
+**What is kept:**
+- `CLAUDE.md` (Manta's reference block is appended once if it is missing)
+- `PATTERNS.md`, `manta.patterns.json` and `.mantaignore`
+- Your spec, architecture, risks and constitution files, `.env`, `README.md`, `CHANGELOG.md`
 - Any file in `src/`, `app/`, or your project source directories
 
-After updating, commit the changed files:
+After updating, review and commit the changed files. The commit gate skips Manta's files that are exactly as the installer wrote them, so the update commit reviews only what you changed:
 ```bash
-git add .claude/ .githooks/ scripts/ CLAUDE.md AGENTS.md GEMINI.md
+git add .claude/ .githooks/ scripts/ CLAUDE.md AGENTS.md GEMINI.md .github/ .gitignore
 git commit -m "chore: update Manta to latest"
 ```
 
