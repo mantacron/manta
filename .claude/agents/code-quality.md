@@ -177,6 +177,27 @@ If `PATTERNS.md` doesn't exist: proceed with generic rules only.
   about the code it suppresses.
 - `// manta-defer:` missing either `ceiling:` or `trigger:` — flag as WARNING; `/debt` cannot retire it.
 
+### Gate Configuration Changes
+These files change what the review itself does, so a change to one is reviewed
+as a change to the gate:
+- **`.mantaignore`**: every added rule needs a reason comment (WARNING without
+  one). A rule that suppresses `CRITICAL`, uses a repo-wide glob (`**`) with a
+  severity or a broad keyword, or suppresses a security keyword (auth, injection,
+  secret, crypto) is a WARNING that says exactly what it now hides. A suppression
+  is a bypass that never expires — the reviewer is the only one who will see it.
+- **`.claude/settings.json` / `settings.local.json`**: an `allow` rule that widens
+  what a headless reviewer may run (wildcards before the subcommand, `sudo`, `rm`,
+  network tools, `git push`) or a removed `deny` entry is a WARNING; one that
+  lets a reviewer write outside `.manta-cache/` is CRITICAL.
+- **`.claude/agents/*.md`, `.claude/commands/*.md`, `manta.patterns.json`**: a
+  change that narrows what a reviewer checks, lowers a severity, or adds a
+  forbidden pattern broad enough to block ordinary code is a WARNING describing
+  the behaviour change.
+- **Dependency manifests** (`package.json`, `requirements*.txt`, `pyproject.toml`,
+  `go.mod`, …): a new dependency or a major-version bump is INFO naming the
+  package and why it matters; an install script (`postinstall`), a git/URL
+  dependency or an unpinned wildcard version is a WARNING.
+
 ### Code Smells
 - Magic numbers/strings — should be named constants
 - Long parameter lists (>4 params suggest object parameter)
@@ -257,6 +278,32 @@ QUALITY_PASS | QUALITY_WARN | QUALITY_BLOCK
 [QUALITY_BLOCK if any CRITICAL; QUALITY_WARN if warnings only; QUALITY_PASS if clean]
 ```
 
+## The Spec's Declared Trust Boundaries
+
+Before reporting a *missing* control, read the project's spec (`spec/SPEC.md`,
+or `../spec/SPEC.md` in subdirectory mode) — its overview / non-goals, security
+requirements, and known constraints. One read, those sections only.
+
+A spec can delegate a control to infrastructure on purpose: "authentication and
+multi-tenancy are non-goals — the service runs behind an internal gateway that
+authenticates callers", "rate limiting is enforced at the edge". When it does,
+a finding whose whole substance is "this endpoint has no in-process
+<delegated control>" is the spec's documented design, not a defect:
+
+- Report it at most as **INFO**, prefixed `[spec: delegated]`, and cite the
+  spec section — so a reader who disagrees with the design can still see it.
+- Never raise it as WARNING or CRITICAL. Two agents agreeing on it does not
+  change that: in a customer test, exactly this finding — no auth on a
+  gateway-fronted API, confirmed by two agents — blocked a push while
+  spec-guardian passed the same diff.
+
+This narrows nothing else. It never applies to injection, hardcoded secrets,
+exposure of data to a caller who *is* authenticated (IDOR between tenants the
+spec says exist), crypto, or anything the spec does not explicitly delegate.
+If the code contradicts the spec (it claims a gateway but the service is
+publicly bound, or it implements half the delegated control wrongly), that is a
+finding at full severity — say what the spec claims and what the code does.
+
 ## Severity Guide
 
 **CRITICAL** (blocks commit):
@@ -266,11 +313,15 @@ QUALITY_PASS | QUALITY_WARN | QUALITY_BLOCK
 - Obvious security issue (see security-sentinel for full security review)
 - Race condition in concurrent code
 - Data loss scenario
+- Duplicate effect on retry when it moves money or drives a record into a
+  terminal state (an unenforced idempotency key on a payment)
 
 **WARNING** (commit allowed, must fix soon):
 - DRY violation — duplication will diverge and cause bugs
 - High complexity that will cause maintenance pain
 - Missing edge case that could cause issues in certain inputs
+- Duplicate effect on retry anywhere else (a stored-but-unenforced request id or
+  idempotency key) — never INFO: a replay writing twice is a defect, not a style
 - Misleading name that will cause confusion
 - Error handling that's not good enough
 - `manta-ignore` with no reason, or `manta-defer` with no ceiling/trigger

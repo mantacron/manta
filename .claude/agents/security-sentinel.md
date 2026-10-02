@@ -423,6 +423,32 @@ SECURITY_PASS | SECURITY_WARN | SECURITY_BLOCK
 [SECURITY_BLOCK if any CRITICAL; SECURITY_WARN if warnings only; SECURITY_PASS if clean]
 ```
 
+## The Spec's Declared Trust Boundaries
+
+Before reporting a *missing* control, read the project's spec (`spec/SPEC.md`,
+or `../spec/SPEC.md` in subdirectory mode) — its overview / non-goals, security
+requirements, and known constraints. One read, those sections only.
+
+A spec can delegate a control to infrastructure on purpose: "authentication and
+multi-tenancy are non-goals — the service runs behind an internal gateway that
+authenticates callers", "rate limiting is enforced at the edge". When it does,
+a finding whose whole substance is "this endpoint has no in-process
+<delegated control>" is the spec's documented design, not a defect:
+
+- Report it at most as **INFO**, prefixed `[spec: delegated]`, and cite the
+  spec section — so a reader who disagrees with the design can still see it.
+- Never raise it as WARNING or CRITICAL. Two agents agreeing on it does not
+  change that: in a customer test, exactly this finding — no auth on a
+  gateway-fronted API, confirmed by two agents — blocked a push while
+  spec-guardian passed the same diff.
+
+This narrows nothing else. It never applies to injection, hardcoded secrets,
+exposure of data to a caller who *is* authenticated (IDOR between tenants the
+spec says exist), crypto, or anything the spec does not explicitly delegate.
+If the code contradicts the spec (it claims a gateway but the service is
+publicly bound, or it implements half the delegated control wrongly), that is a
+finding at full severity — say what the spec claims and what the code does.
+
 ## Severity Guide
 
 **CRITICAL** (always blocks commit):
@@ -443,6 +469,10 @@ SECURITY_PASS | SECURITY_WARN | SECURITY_BLOCK
 - CORS misconfiguration
 - Missing rate limiting
 - Session management issues
+- Duplicate effect on retry: a create/payment/transfer endpoint that accepts an
+  idempotency key or request id but does not enforce it (a replay records the
+  action twice). CRITICAL when it moves money or drives a record into a terminal
+  state. A customer test lost exactly this finding by rating it INFO.
 
 **INFO** (good practice suggestion):
 - Security hardening opportunities
