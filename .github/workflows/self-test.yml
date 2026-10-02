@@ -21,6 +21,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Read-only for every job. Nothing here writes to the repository, and without
+# this block a job inherits the repository's default token permissions, which
+# on older repositories is read-write.
+permissions:
+  contents: read
+
 jobs:
   self-test:
     name: Repo self-test
