@@ -181,10 +181,18 @@ manta_code_files() {
 # files on the developer's own AI bill, at commit and again at push. An edited
 # file has a different blob and is reviewed. No list (another clone, CI) keeps
 # everything. The list is local and git-ignored: a hash a teammate could commit
-# is a hash a teammate could forge. No associative arrays — macOS ships bash 3.2.
+# is a hash a teammate could forge — so a list git tracks (someone committed it)
+# is ignored, and everything is reviewed. No associative arrays — macOS ships
+# bash 3.2.
 manta_drop_installed_files() {  # $1 = "staged" | <commit>
-  local where="$1" list="${MANTA_DIR:-.}/.manta-cache/installed-blobs.tsv" path blob recorded
+  local where="$1" list="${MANTA_DIR:-.}/.manta-cache/installed-blobs.tsv" path blob recorded tracked
   if [[ ! -s "$list" || -L "$list" ]]; then
+    cat
+    return 0
+  fi
+  tracked="$(git -C "${MANTA_DIR:-.}" ls-files -- .manta-cache/installed-blobs.tsv 2>/dev/null)" || tracked="unknown"
+  if [[ -n "$tracked" ]]; then
+    echo "[manta] .manta-cache/installed-blobs.tsv is committed to the repository — ignored; every file is reviewed" >&2
     cat
     return 0
   fi

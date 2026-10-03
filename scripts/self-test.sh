@@ -575,6 +575,21 @@ rm -f "$HOOK_TMP/called"
 [[ -f "$HOOK_TMP/called" ]] \
   && log_ok "an installed file edited afterwards is reviewed" \
   || log_fail "an edited Manta file was skipped — the skip list must match the exact blob"
+# A committed list could mark a teammate's own edit "installed" on every machine
+# that pulls it. Undo the edit (the list vouches for every file again), commit
+# the list by force, and the hook must ignore it and review.
+( cd "$TMP_PROJECT" \
+    && git cat-file -p "$(awk -F'\t' '$2 == "scripts/models.sh" { print $1; exit }' .manta-cache/installed-blobs.tsv)" > scripts/models.sh \
+    && git add scripts/models.sh && git add -f .manta-cache/installed-blobs.tsv ) > /dev/null 2>&1
+rm -f "$HOOK_TMP/called"
+TRACKED_OUT=$( cd "$TMP_PROJECT" && PATH="$HOOK_TMP/callbin:$PATH" FAKE_AI_CALLED="$HOOK_TMP/called" \
+    bash .githooks/pre-commit 2>&1 )
+if [[ -f "$HOOK_TMP/called" ]] && grep -q "committed to the repository" <<< "$TRACKED_OUT"; then
+  log_ok "a committed installed-blobs.tsv is ignored — everything is reviewed"
+else
+  log_fail "a committed installed-blobs.tsv was trusted — a teammate could mark their own edit as installed"
+fi
+( cd "$TMP_PROJECT" && git rm -q --cached .manta-cache/installed-blobs.tsv ) > /dev/null 2>&1
 
 # ─── 6d. The Claude Code hooks in .claude/settings.json ──────────────────────
 # The guard against an assistant skipping the gate with `--no-verify` read

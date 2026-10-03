@@ -446,7 +446,8 @@ fi
 # Kept in .manta-cache (git-ignored, local to this machine), never committed: a
 # hash a teammate could commit is a hash a teammate could forge, and this list
 # must only ever say "the installer on this machine wrote exactly this". A clone
-# without it — another developer, CI — reviews the update in full.
+# without it — another developer, CI — reviews the update in full. A list git
+# tracks is such a commit: it is never read back here, and the hooks ignore it.
 if git rev-parse --git-dir &>/dev/null; then
   mkdir -p .manta-cache
   INSTALLED_BLOBS=".manta-cache/installed-blobs.tsv"
@@ -457,7 +458,8 @@ if git rev-parse --git-dir &>/dev/null; then
   _kept="$(mktemp)"; _fresh="$(mktemp)"
   # An entry from an earlier run survives only while the file still holds the
   # blob recorded then — a file edited since, and kept by this run, drops out.
-  if [[ -f "$INSTALLED_BLOBS" && ! -L "$INSTALLED_BLOBS" ]]; then
+  if [[ -f "$INSTALLED_BLOBS" && ! -L "$INSTALLED_BLOBS" ]] \
+     && [[ -z "$(git ls-files -- "$INSTALLED_BLOBS" 2>/dev/null)" ]]; then
     while IFS=$'\t' read -r _blob _path; do
       _local="${_path#"$_prefix"}"
       [[ -n "$_blob" && -f "$_local" ]] || continue
